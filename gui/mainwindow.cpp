@@ -36,13 +36,13 @@ MainWindow::MainWindow(QWidget *parent)
 
     // 로고
     QLabel *logo = new QLabel();
-    logo->setPixmap(QPixmap(":/img/logo.png").scaled(24, 24));
+    logo->setPixmap(QPixmap(":/img/logo.svg").scaled(24, 24));
     logo->setFixedSize(24, 24);
     logo->setScaledContents(true);
     sideLayout->addWidget(logo, 0, Qt::AlignHCenter);
 
     // 네비게이션 버튼들
-    QStringList icons = {":/img/home.svg", ":/img/target.svg", ":/img/gear.svg"};
+    QStringList icons = {":/img/home.svg", ":/img/list.svg", ":/img/searching.svg", ":/img/pattern.svg"};
     for (const QString &iconPath : icons) {
         QToolButton *btn = new QToolButton();
         btn->setIcon(QIcon(iconPath));
@@ -59,7 +59,7 @@ MainWindow::MainWindow(QWidget *parent)
     mainLayout->setContentsMargins(20, 20, 20, 20);
 
     // 페이지 이름 (ex: Training)
-    QLabel *pageTitle = new QLabel("Training");
+    QLabel *pageTitle = new QLabel("Content Area");
     pageTitle->setStyleSheet("color: white; font-size: 24px; font-weight: bold;");
     mainLayout->addWidget(pageTitle);
 
