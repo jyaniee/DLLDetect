@@ -13,7 +13,6 @@ find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
 include_directories(include)
-qt_add_resources(RESOURCES resources.qrc)
 # qt_wrap_ui(UISrcs gui/mainwindow.ui)
 add_subdirectory(src)
 set(PROJECT_SOURCES
@@ -25,12 +24,12 @@ set(PROJECT_SOURCES
 qt_add_executable(DLLDetect
     MANUAL_FINALIZATION
     ${PROJECT_SOURCES}
-    ${RESOURCES}
+    resources.qrc
 )
 
 target_link_libraries(DLLDetect PRIVATE Qt${QT_VERSION_MAJOR}::Widgets core)
 target_include_directories(DLLDetect PRIVATE include)
-target_sources(DLLDetect PRIVATE ${RESOURCES})
+target_sources(DLLDetect PRIVATE resources.qrc)
 if(${QT_VERSION} VERSION_LESS 6.1.0)
   set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.DLLDetect)
 endif()
