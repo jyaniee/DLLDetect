@@ -82,3 +82,4 @@ CMakeLists.txt.user*
 /build*/
 
 /build*/**
+/build/*
