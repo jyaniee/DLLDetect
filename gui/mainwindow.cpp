@@ -14,7 +14,6 @@
 #include <QIcon>
 #include <QSize>
 
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent) {
     setWindowTitle("Filter Dashboard");
@@ -37,9 +36,9 @@ MainWindow::MainWindow(QWidget *parent)
     topBarLayout->setContentsMargins(0, 0, 0, 0);
     topBarLayout->setSpacing(0);
 
-    // 로고 영역
+    // 로고 영역 (사이드바와 동일한 크기)
     QWidget *logoArea = new QWidget();
-    logoArea->setFixedWidth(80);
+    logoArea->setFixedWidth(60);  // 기존 80 → 60으로 조정
     logoArea->setStyleSheet("background-color: #12131a;");
 
     QHBoxLayout *logoLayout = new QHBoxLayout(logoArea);
@@ -55,7 +54,17 @@ MainWindow::MainWindow(QWidget *parent)
     QLabel *titleLabel = new QLabel("Content Area");
     titleLabel->setStyleSheet("color: white; font-size: 20px; font-weight: bold;");
 
+    // 로고와 텍스트 사이 구분선 추가
+    QFrame *logoSeparator = new QFrame();
+    logoSeparator->setFrameShape(QFrame::VLine);
+    logoSeparator->setFrameShadow(QFrame::Plain);
+    logoSeparator->setStyleSheet("color: #2e2e3f;");
+    logoSeparator->setFixedWidth(3);
+
+    // 상단바 레이아웃 구성
     topBarLayout->addWidget(logoArea);
+    topBarLayout->addSpacing(12);
+    topBarLayout->addWidget(logoSeparator);  // 구분선 추가
     topBarLayout->addSpacing(12);
     topBarLayout->addWidget(titleLabel);
     topBarLayout->addStretch();
@@ -72,9 +81,9 @@ MainWindow::MainWindow(QWidget *parent)
     contentLayout->setContentsMargins(0, 0, 0, 0);
     contentLayout->setSpacing(0);
 
-    // ▶ 좌측 패널
+    // ▶ 좌측 패널 (사이드바 크기 60px로 조정)
     QWidget *sidePanel = new QWidget();
-    sidePanel->setFixedWidth(80);
+    sidePanel->setFixedWidth(72);  // 기존 80 → 60으로 조정
     sidePanel->setStyleSheet("background-color: #12131a;");
 
     QVBoxLayout *sideLayout = new QVBoxLayout(sidePanel);
