@@ -22,7 +22,25 @@ MainWindow::MainWindow(QWidget *parent)
     QWidget *central = new QWidget(this);
     setCentralWidget(central);
 
-    QHBoxLayout *rootLayout = new QHBoxLayout(central);
+    QVBoxLayout *mainVerticalLayout = new QVBoxLayout(central);
+    mainVerticalLayout->setContentsMargins(0, 0, 0, 0);
+    mainVerticalLayout->setSpacing(0);
+
+    // ▶ 상단바
+    QWidget *topBar = new QWidget();
+    topBar->setFixedHeight(60);
+    topBar->setStyleSheet("background-color: transparent;");
+
+    QHBoxLayout *topBarLayout = new QHBoxLayout(topBar);
+    topBarLayout->setContentsMargins(0, 0, 0, 0);
+    topBarLayout->setSpacing(10);
+
+    // ▶ 루트 (좌측 패널 + 콘텐츠)
+    QWidget *rootArea = new QWidget();
+    QHBoxLayout *rootLayout = new QHBoxLayout(rootArea);
+    rootLayout->setContentsMargins(0, 0, 0, 0);
+    rootLayout->setSpacing(0);
+
     central->setStyleSheet("background-color: #12131a;");
 
     // ▶ 좌측 패널
@@ -34,13 +52,6 @@ MainWindow::MainWindow(QWidget *parent)
     sideLayout->setContentsMargins(10, 10, 10, 10);
     sideLayout->setSpacing(20);
 
-    // 로고
-    QLabel *logo = new QLabel();
-    logo->setPixmap(QPixmap(":/img/logo.svg").scaled(24, 24));
-    logo->setFixedSize(24, 24);
-    logo->setScaledContents(true);
-    sideLayout->addWidget(logo, 0, Qt::AlignHCenter);
-
     // 네비게이션 버튼들
     QStringList icons = {":/img/home.svg", ":/img/list.svg", ":/img/searching.svg", ":/img/pattern.svg"};
     for (const QString &iconPath : icons) {
@@ -50,7 +61,6 @@ MainWindow::MainWindow(QWidget *parent)
         btn->setStyleSheet("QToolButton { border: none; } QToolButton:hover { background-color: #2e2e3f; }");
         sideLayout->addWidget(btn, 0, Qt::AlignHCenter);
     }
-
     sideLayout->addStretch();
 
     // ▶ 메인 콘텐츠 영역
@@ -58,25 +68,50 @@ MainWindow::MainWindow(QWidget *parent)
     QVBoxLayout *mainLayout = new QVBoxLayout(mainContent);
     mainLayout->setContentsMargins(20, 20, 20, 20);
 
-    // 페이지 이름 (ex: Training)
-    QLabel *pageTitle = new QLabel("Content Area");
+    // 콘텐츠 제목
+    QLabel *pageTitle = new QLabel("Content Title");
     pageTitle->setStyleSheet("color: white; font-size: 24px; font-weight: bold;");
-    mainLayout->addWidget(pageTitle);
 
     // 콘텐츠 Placeholder
     QLabel *placeholder = new QLabel("[ 콘텐츠 영역 ]");
     placeholder->setStyleSheet("color: gray; font-size: 14px;");
     placeholder->setAlignment(Qt::AlignCenter);
+
+    mainLayout->addWidget(pageTitle);
     mainLayout->addStretch();
     mainLayout->addWidget(placeholder);
     mainLayout->addStretch();
 
-    // ▶ 레이아웃 구성
+    // 로고 (상단바 + 좌측 패널의 기준 정렬)
+    QWidget *logoWrapper = new QWidget();
+    logoWrapper->setFixedWidth(80);
+    logoWrapper->setContentsMargins(0, 0, 0, 0);
+    QHBoxLayout *logoLayout = new QHBoxLayout(logoWrapper);
+    logoLayout->setContentsMargins(10, 10, 10, 10);
+    logoLayout->setAlignment(Qt::AlignCenter);
+
+    QLabel *logo = new QLabel();
+    logo->setPixmap(QPixmap(":/img/logo.svg").scaled(24, 24));
+    logo->setFixedSize(24, 24);
+    logo->setScaledContents(true);
+
+    logoLayout->addWidget(logo);
+
+    topBarLayout->addWidget(logoWrapper);
+    topBarLayout->addSpacing(4);
+    topBarLayout->addWidget(pageTitle);
+    topBarLayout->addStretch();
+
+    // ▶ 조립
     rootLayout->addWidget(sidePanel);
     rootLayout->addWidget(mainContent);
-    rootLayout->setStretch(0, 1); // 사이드바
-    rootLayout->setStretch(1, 5); // 콘텐츠
+    rootLayout->setStretch(0, 1);
+    rootLayout->setStretch(1, 5);
+
+    mainVerticalLayout->addWidget(topBar);
+    mainVerticalLayout->addWidget(rootArea);
 }
+
 
 MainWindow::~MainWindow() {
     // 기본 소멸자, 비워도 문제 없음
