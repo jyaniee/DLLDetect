@@ -15,21 +15,44 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 include_directories(include)
 # qt_wrap_ui(UISrcs gui/mainwindow.ui)
 add_subdirectory(src)
-set(PROJECT_SOURCES
+set(SOURCES
     main.cpp
     gui/mainwindow.cpp
-    gui/mainwindow.ui
-    gui/mainwindow.h
-)
-qt_add_executable(DLLDetect
-    MANUAL_FINALIZATION
-    ${PROJECT_SOURCES}
-    resources.qrc
+    src/ProcessManager.cpp
+    # resources/resources.qrc
 )
 
+set(HEADERS
+    include/ProcessManager.h
+    gui/mainwindow.h
+)
+
+set(UI_FILES
+    gui/mainwindow.ui
+)
+
+set(RESOURCE_FILES
+  resources/resources.qrc
+)
+
+if(QT_VERSION_MAJOR EQUAL 6)
+  qt6_wrap_cpp(MOC_SOURCES ${HEADERS})
+  qt6_wrap_ui(UIC_SOURCES ${UI_FILES})
+  qt6_add_resources(RESOURCE_SOURCES ${RESOURCE_FILES})
+else()
+  qt5_wrap_cpp(MOC_SOURCES ${HEADERS})
+  qt5_wrap_ui(UIC_SOURCES ${UI_FILES})
+  qt5_add_resources(RESOURCE_SOURCES ${RESOURCE_FILES})
+endif()
+
+add_executable(DLLDetect ${SOURCES} ${MOC_SOURCES} ${UIC_SOURCES} ${RESOURCE_SOURCES})
+# add_executable(RESOURCE_FILES)
+
 target_link_libraries(DLLDetect PRIVATE Qt${QT_VERSION_MAJOR}::Widgets core)
+find_package(Qt6 REQUIRED COMPONENTS Svg Widgets)
+target_link_libraries(DLLDetect PRIVATE Qt6::Widgets Qt6::Svg)
 target_include_directories(DLLDetect PRIVATE include)
-target_sources(DLLDetect PRIVATE resources.qrc)
+# target_sources(DLLDetect PRIVATE resources/resources.qrc)
 if(${QT_VERSION} VERSION_LESS 6.1.0)
   set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.DLLDetect)
 endif()
