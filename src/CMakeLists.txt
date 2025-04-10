@@ -1,5 +1,6 @@
 add_library(core
     ProcessManager.cpp
+    Result.cpp
    # DLLAnalyzer.cpp
    # Logger.cpp
 )

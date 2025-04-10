@@ -12,6 +12,7 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     MainWindow w;
     w.show();
+    /*
     Q_INIT_RESOURCE(resources);
     QPixmap pix(":/img/home.svg");
     if (pix.isNull()) {
@@ -36,6 +37,6 @@ int main(int argc, char *argv[])
     while (it.hasNext()) {
         qDebug() << "[RESOURCE]" << it.next();
     }
-
+    */
     return a.exec();
 }
