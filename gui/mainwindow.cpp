@@ -165,6 +165,8 @@ MainWindow::MainWindow(QWidget *parent)
     mainLayout->addWidget(topBar);
     mainLayout->addWidget(topLine);
     mainLayout->addWidget(contentArea);
+
+    updateStage(AppStage::Home);
 }
 
 MainWindow::~MainWindow() {
@@ -199,10 +201,13 @@ void MainWindow::updateStage(AppStage newStage){
 
     for(int i=0; i<stageButtons.size(); i++){
         QString style;
+        //if(i == 0){
+        //    style = "background-color: transparent;";
+        //}
         if(i < static_cast<int>(currentStage)){
             // style = "background-color: #1e1e2e;";
         }else if(i == static_cast<int>(currentStage)){
-            style = "background-color: #3e3e5e;";
+            style = "background-color: #1e1e2e;";
         }else {
             style = "background-color: transparent;";
         }
