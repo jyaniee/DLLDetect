@@ -14,7 +14,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(include)
 # qt_wrap_ui(UISrcs gui/mainwindow.ui)
-#add_subdirectory(src)
 set(SOURCES
     main.cpp
     gui/mainwindow.cpp
