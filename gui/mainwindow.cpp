@@ -98,11 +98,35 @@ MainWindow::MainWindow(QWidget *parent)
 
     for (const QString &icon : icons) {
         QToolButton *btn = new QToolButton();
+        /*
         btn->setIcon(QIcon(icon));
         btn->setIconSize(QSize(24, 24));
         btn->setStyleSheet("QToolButton { border: none; } QToolButton:hover { background-color: #2e2e3f; }");
+        */
+        btn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        btn->setFixedHeight(48);
+        btn->setIcon(QIcon(icon));
+        btn->setIconSize(QSize(24, 24));
+        btn->setToolButtonStyle(Qt::ToolButtonIconOnly);
+        btn->setStyleSheet(R"(
+            QToolButton {
+                border: none;
+                padding-left: 0px;
+                padding-right: 0px;
+                background-color: transparent;
+                color: white;
+            }
+            QToolButton:hover {
+                background-color: #2e2e3f;
+            }
+            QToolButton:checked {
+                background-color: #3e3e5e;
+            }
+        )");
+
         btn->setToolTip(stages[index]);
-        sideLayout->addWidget(btn, 0, Qt::AlignHCenter);
+       // sideLayout->addWidget(btn, 0, Qt::AlignHCenter);
+        sideLayout->addWidget(btn);
         stageButtons.append(btn);
 
         connect(btn, &QToolButton::clicked, this, [=](){
