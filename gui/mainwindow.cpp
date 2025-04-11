@@ -46,7 +46,7 @@ MainWindow::MainWindow(QWidget *parent)
     logoLayout->setAlignment(Qt::AlignCenter);
 
     QLabel *logo = new QLabel();
-    logo->setPixmap(QPixmap(":/img/logo.svg").scaled(24, 24));
+    logo->setPixmap(QIcon(":/img/logo.svg").pixmap(24, 24));
     logo->setFixedSize(24, 24);
     logoLayout->addWidget(logo);
 
