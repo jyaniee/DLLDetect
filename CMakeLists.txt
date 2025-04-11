@@ -16,8 +16,9 @@ set(SOURCES
     main.cpp
     gui/mainwindow.cpp
     src/ProcessManager.cpp
-    # resources/resources.qrc
+    resources/resources.qrc
     src/Result.cpp
+    src/ProcessManager.cpp
 )
 
 set(HEADERS
