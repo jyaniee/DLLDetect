@@ -13,9 +13,15 @@
 #include <QStringList>
 #include <QIcon>
 #include <QSize>
+#include <QMessageBox>
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent) {
+    QStringList icons = {":/img/home.svg", ":/img/list.svg", ":/img/searching.svg", ":/img/pattern.svg"};
+    QStringList stages = {"Home", "Process", "Detection", "Log"};
+    int index = 0;
+
     setWindowTitle("Filter Dashboard");
     resize(1280, 800);
 
@@ -90,13 +96,20 @@ MainWindow::MainWindow(QWidget *parent)
     sideLayout->setContentsMargins(10, 10, 10, 10);
     sideLayout->setSpacing(20);
 
-    QStringList icons = {":/img/home.svg", ":/img/list.svg", ":/img/searching.svg", ":/img/pattern.svg"};
     for (const QString &icon : icons) {
         QToolButton *btn = new QToolButton();
         btn->setIcon(QIcon(icon));
         btn->setIconSize(QSize(24, 24));
         btn->setStyleSheet("QToolButton { border: none; } QToolButton:hover { background-color: #2e2e3f; }");
+        btn->setToolTip(stages[index]);
         sideLayout->addWidget(btn, 0, Qt::AlignHCenter);
+        stageButtons.append(btn);
+
+        connect(btn, &QToolButton::clicked, this, [=](){
+            handleStageClick(index);
+        });
+
+        ++index;
     }
     sideLayout->addStretch();
 
@@ -111,12 +124,12 @@ MainWindow::MainWindow(QWidget *parent)
     QVBoxLayout *mainContentLayout = new QVBoxLayout(mainContent);
     mainContentLayout->setContentsMargins(20, 20, 20, 20);
 
-    QLabel *placeholder = new QLabel("[ 콘텐츠 영역 ]");
-    placeholder->setStyleSheet("color: gray; font-size: 14px;");
-    placeholder->setAlignment(Qt::AlignCenter);
+    mainLabel = new QLabel("[ 콘텐츠 영역 ]");
+    mainLabel->setStyleSheet("color: gray; font-size: 14px;");
+    mainLabel->setAlignment(Qt::AlignCenter);
 
     mainContentLayout->addStretch();
-    mainContentLayout->addWidget(placeholder);
+    mainContentLayout->addWidget(mainLabel);
     mainContentLayout->addStretch();
 
     // ▶ 조립
@@ -133,3 +146,68 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow() {
     // 기본 소멸자, 비워도 문제 없음
 }
+
+void MainWindow::handleStageClick(int index){
+    switch (index){
+    case 0: // HOME
+        updateStage(AppStage::Home);
+        break;
+    case 1: // 프로세스 목록
+        updateStage(AppStage::ProcessSelected);
+        break;
+    case 2:
+        if(currentStage >= AppStage::ProcessSelected)
+            updateStage(AppStage::DetectionStarted);
+        else
+            warnUser("먼저 프로세스를 선택하세요.");
+        break;
+    case 3:
+        if(currentStage >= AppStage::DetectionStarted)
+            updateStage(AppStage::LogSaved);
+        else
+            warnUser("먼저 탐지를 시작하세요.");
+        break;
+    }
+}
+
+void MainWindow::updateStage(AppStage newStage){
+    currentStage = newStage;
+
+    for(int i=0; i<stageButtons.size(); i++){
+        QString style;
+        if(i < static_cast<int>(currentStage)){
+            // style = "background-color: #1e1e2e;";
+        }else if(i == static_cast<int>(currentStage)){
+            style = "background-color: #3e3e5e;";
+        }else {
+            style = "background-color: transparent;";
+        }
+
+        stageButtons[i]->setStyleSheet(
+            QString("QToolButton { border: none; %1 } QToolButton:hover { background-color: #2e2e3f; }")
+                .arg(style)
+            );
+    }
+
+    if(mainLabel){
+        switch(currentStage){
+        case AppStage::Home:
+            mainLabel->setText("홈");
+            break;
+        case AppStage::ProcessSelected:
+            mainLabel->setText("프로세스 선택");
+            break;
+        case AppStage::DetectionStarted:
+            mainLabel->setText("DLL 탐지");
+            break;
+        case AppStage::LogSaved:
+            mainLabel->setText("로그 저장");
+            break;
+        }
+    }
+}
+
+void MainWindow::warnUser(const QString &msg){
+    QMessageBox::warning(this, "안내", msg);
+}
+

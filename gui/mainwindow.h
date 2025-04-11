@@ -2,6 +2,17 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QToolButton>
+#include <QLabel>
+#include <QVector>
+#include <QString>
+
+enum class AppStage {
+    Home,
+    ProcessSelected,
+    DetectionStarted,
+    LogSaved
+};
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -19,5 +30,18 @@ public:
 
 private:
     Ui::MainWindow *ui;
+
+    AppStage currentStage = AppStage::Home;
+    QVector<QToolButton*> stageButtons;
+    QLabel *mainLabel;
+
+    void handleStageClick(int index);
+    void updateStage(AppStage newStage);
+    void warnUser(const QString &msg);
+
 };
+
+
+
+
 #endif // MAINWINDOW_H
