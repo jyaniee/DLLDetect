@@ -9,12 +9,9 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
-# find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
 include_directories(include)
-# qt_wrap_ui(UISrcs gui/mainwindow.ui)
-add_subdirectory(src)
+# add_subdirectory(src)
 set(SOURCES
     main.cpp
     gui/mainwindow.cpp
@@ -37,21 +34,20 @@ set(RESOURCE_FILES
   resources/resources.qrc
 )
 
+qt6_add_resources(resources_generated resources/resources.qrc)
+
+
 if(QT_VERSION_MAJOR EQUAL 6)
   qt6_wrap_cpp(MOC_SOURCES ${HEADERS})
   qt6_wrap_ui(UIC_SOURCES ${UI_FILES})
-  qt6_add_resources(RESOURCE_SOURCES ${RESOURCE_FILES})
+#  qt6_add_resources(RESOURCE_SOURCES ${RESOURCE_FILES})
 #else()
 #  qt5_wrap_cpp(MOC_SOURCES ${HEADERS})
 #  qt5_wrap_ui(UIC_SOURCES ${UI_FILES})
 #  qt5_add_resources(RESOURCE_SOURCES ${RESOURCE_FILES})
 endif()
 
-add_executable(DLLDetect ${SOURCES} ${MOC_SOURCES} ${UIC_SOURCES} ${RESOURCE_SOURCES}
-  include/Result.h)
-# add_executable(RESOURCE_FILES)
-
-# target_link_libraries(DLLDetect PRIVATE Qt${QT_VERSION_MAJOR}::Widgets core)
+add_executable(DLLDetect ${SOURCES} ${MOC_SOURCES} ${UIC_SOURCES} ${resources_generated})
 
 target_link_libraries(DLLDetect PRIVATE Qt6::Widgets Qt6::Svg Qt6::Core Qt6::Gui)
 target_include_directories(DLLDetect PRIVATE include)
