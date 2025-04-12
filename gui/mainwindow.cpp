@@ -1,4 +1,7 @@
 #include "mainwindow.h"
+#include "ProcessManager.h"
+#include "Result.h"
+
 
 #include <QWidget>
 #include <QHBoxLayout>
@@ -14,6 +17,8 @@
 #include <QIcon>
 #include <QSize>
 #include <QMessageBox>
+#include <QTableWidget>
+#include <QHeaderView>
 
 
 MainWindow::MainWindow(QWidget *parent)
@@ -150,6 +155,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     mainLabel = new QLabel("[ 콘텐츠 영역 ]");
     mainLabel->setStyleSheet("color: gray; font-size: 14px;");
+    mainContentLayout->addWidget(resultTable);
     mainLabel->setAlignment(Qt::AlignCenter);
 
     mainContentLayout->addStretch();
@@ -180,6 +186,7 @@ void MainWindow::handleStageClick(int index){
         break;
     case 1: // 프로세스 목록
         updateStage(AppStage::ProcessSelected);
+        loadProcesses();
         break;
     case 2:
         if(currentStage >= AppStage::ProcessSelected)
@@ -233,6 +240,26 @@ void MainWindow::updateStage(AppStage newStage){
             mainLabel->setText("로그 저장");
             break;
         }
+    }
+}
+void MainWindow::loadProcesses() {
+    ProcessManager manager;
+    std::vector<Result> results = manager.getProcessList();
+
+    resultTable->clearContents();
+    resultTable->setRowCount(static_cast<int>(results.size()));
+
+    for (int i = 0; i < static_cast<int>(results.size()); ++i) {
+        const Result &res = results[i];
+        resultTable->setItem(i, 0, new QTableWidgetItem(QString::number(res.pid)));
+        resultTable->setItem(i, 1, new QTableWidgetItem(res.processName));
+        resultTable->setItem(i, 2, new QTableWidgetItem(QString::number(res.dllList.size())));
+    }
+
+    resultTable->show();
+
+    if (results.empty()) {
+        QMessageBox::information(this, "결과 없음", "프로세스를 불러오지 못했습니다.");
     }
 }
 

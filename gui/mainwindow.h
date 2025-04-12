@@ -6,6 +6,8 @@
 #include <QLabel>
 #include <QVector>
 #include <QString>
+#include <QTableWidget>
+#include <QPushButton>
 
 enum class AppStage {
     Home,
@@ -30,14 +32,17 @@ public:
 
 private:
     Ui::MainWindow *ui;
+    QPushButton *loadButton;
 
     AppStage currentStage = AppStage::Home;
     QVector<QToolButton*> stageButtons;
     QLabel *mainLabel;
+    QTableWidget *resultTable;
 
     void handleStageClick(int index);
     void updateStage(AppStage newStage);
     void warnUser(const QString &msg);
+    void loadProcesses();
 
 };
 
