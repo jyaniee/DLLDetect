@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "Result.h"
 #include <QMainWindow>
 #include <QToolButton>
 #include <QLabel>
@@ -38,11 +39,13 @@ private:
     QVector<QToolButton*> stageButtons;
     QLabel *mainLabel;
     QTableWidget *resultTable;
+    std::vector<Result> cachedResults;
 
     void handleStageClick(int index);
     void updateStage(AppStage newStage);
     void warnUser(const QString &msg);
     void loadProcesses();
+    void handleRowClicked(int row, int column);
 
 };
 

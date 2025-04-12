@@ -153,6 +153,12 @@ MainWindow::MainWindow(QWidget *parent)
     QVBoxLayout *mainContentLayout = new QVBoxLayout(mainContent);
     mainContentLayout->setContentsMargins(20, 20, 20, 20);
 
+    resultTable = new QTableWidget(this);
+    resultTable->setColumnCount(3);
+    resultTable->setHorizontalHeaderLabels(QStringList() << "PID" << "프로세스 이름" << "DLL 개수");
+    resultTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    resultTable->hide();
+
     mainLabel = new QLabel("[ 콘텐츠 영역 ]");
     mainLabel->setStyleSheet("color: gray; font-size: 14px;");
     mainContentLayout->addWidget(resultTable);
@@ -255,6 +261,8 @@ void MainWindow::loadProcesses() {
         resultTable->setItem(i, 1, new QTableWidgetItem(res.processName));
         resultTable->setItem(i, 2, new QTableWidgetItem(QString::number(res.dllList.size())));
     }
+    connect(resultTable, &QTableWidget::cellClicked, this, &MainWindow::handleRowClicked);
+    cachedResults = results;
 
     resultTable->show();
 
@@ -266,4 +274,17 @@ void MainWindow::loadProcesses() {
 void MainWindow::warnUser(const QString &msg){
     QMessageBox::warning(this, "안내", msg);
 }
+void MainWindow::handleRowClicked(int row, int column) {
+    if (row < 0 || row >= static_cast<int>(cachedResults.size())) return;
+
+    const Result &res = cachedResults[row];
+    QString message = QString("PID: %1\n프로세스명: %2\n\nDLL 목록:\n").arg(res.pid).arg(res.processName);
+
+    for (const QString &dll : res.dllList) {
+        message += "- " + dll + "\n";
+    }
+
+    QMessageBox::information(this, "프로세스 DLL 목록", message);
+}
+
 
