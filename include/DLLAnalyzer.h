@@ -1,0 +1,4 @@
+#ifndef DLLANALYZER_H
+#define DLLANALYZER_H
+
+#endif // DLLANALYZER_H
