@@ -235,31 +235,47 @@ void MainWindow::updateStage(AppStage newStage){
         switch(currentStage){
         case AppStage::Home:
             mainLabel->setText("홈");
+            clearTable();
             break;
         case AppStage::ProcessSelected:
             mainLabel->setText("프로세스 선택");
             break;
         case AppStage::DetectionStarted:
             mainLabel->setText("DLL 탐지");
+            clearTable();
             break;
         case AppStage::LogSaved:
             mainLabel->setText("로그 저장");
+            clearTable();
             break;
         }
     }
+
 }
+void MainWindow::clearTable(){
+    resultTable->clearContents();
+    resultTable->setRowCount(0);
+    resultTable->setColumnCount(0);
+    resultTable->setStyleSheet("border: none;");
+}
+
 void MainWindow::loadProcesses() {
     ProcessManager manager;
     std::vector<Result> results = manager.getProcessList();
 
     resultTable->clearContents();
+    resultTable->setColumnCount(2);
     resultTable->setRowCount(static_cast<int>(results.size()));
+    resultTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    resultTable->setSelectionMode(QAbstractItemView::SingleSelection);
+    resultTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+
+
 
     for (int i = 0; i < static_cast<int>(results.size()); ++i) {
         const Result &res = results[i];
         resultTable->setItem(i, 0, new QTableWidgetItem(QString::number(res.pid)));
         resultTable->setItem(i, 1, new QTableWidgetItem(res.processName));
-        resultTable->setItem(i, 2, new QTableWidgetItem(QString::number(res.dllList.size())));
     }
     connect(resultTable, &QTableWidget::cellClicked, this, &MainWindow::handleRowClicked);
     cachedResults = results;
@@ -277,14 +293,14 @@ void MainWindow::warnUser(const QString &msg){
 void MainWindow::handleRowClicked(int row, int column) {
     if (row < 0 || row >= static_cast<int>(cachedResults.size())) return;
 
-    const Result &res = cachedResults[row];
-    QString message = QString("PID: %1\n프로세스명: %2\n\nDLL 목록:\n").arg(res.pid).arg(res.processName);
+//    const Result &res = cachedResults[row];
+//    QString message = QString("PID: %1\n프로세스명: %2\n\nDLL 목록:\n").arg(res.pid).arg(res.processName);
 
-    for (const QString &dll : res.dllList) {
-        message += "- " + dll + "\n";
-    }
+//    for (const QString &dll : res.dllList) {
+//        message += "- " + dll + "\n";
+//    }
 
-    QMessageBox::information(this, "프로세스 DLL 목록", message);
+//    QMessageBox::information(this, "프로세스 DLL 목록", message);
 }
 
 

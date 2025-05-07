@@ -45,6 +45,7 @@ private:
     void updateStage(AppStage newStage);
     void warnUser(const QString &msg);
     void loadProcesses();
+    void clearTable();
     void handleRowClicked(int row, int column);
 
 };
