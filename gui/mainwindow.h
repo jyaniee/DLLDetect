@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
-
+#include <QScrollArea>
+#include <QVBoxLayout>
 #include "Result.h"
 #include <QMainWindow>
 #include <QToolButton>
@@ -9,7 +10,7 @@
 #include <QString>
 #include <QTableWidget>
 #include <QPushButton>
-
+#include <QComboBox>
 enum class AppStage {
     Home,
     ProcessSelected,

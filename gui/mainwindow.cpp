@@ -1,8 +1,10 @@
+#include "DLLAnalyzer.h"
 #include "mainwindow.h"
 #include "ProcessManager.h"
 #include "Result.h"
 
 
+#include <iostream>
 #include <QWidget>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -168,6 +170,8 @@ MainWindow::MainWindow(QWidget *parent)
     mainContentLayout->addWidget(mainLabel);
     mainContentLayout->addStretch();
 
+
+
     // ▶ 조립
     contentLayout->addWidget(sidePanel);
     contentLayout->addWidget(sideRightLine);
@@ -246,7 +250,6 @@ void MainWindow::updateStage(AppStage newStage){
             break;
         case AppStage::LogSaved:
             mainLabel->setText("로그 저장");
-            clearTable();
             break;
         }
     }
@@ -265,6 +268,7 @@ void MainWindow::loadProcesses() {
 
     resultTable->clearContents();
     resultTable->setColumnCount(2);
+    resultTable->setHorizontalHeaderLabels(QStringList() <<"PID" << "프로세스 이름");
     resultTable->setRowCount(static_cast<int>(results.size()));
     resultTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     resultTable->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -293,6 +297,29 @@ void MainWindow::warnUser(const QString &msg){
 void MainWindow::handleRowClicked(int row, int column) {
     if (row < 0 || row >= static_cast<int>(cachedResults.size())) return;
 
+    const Result &res = cachedResults[row];
+    int pid = res.pid;
+
+    DLLAnalyzer dllAnalyzer;
+    std::vector<std::string> dllList = dllAnalyzer.GetLoadedModules(pid);
+
+    QString message = QString("프로세스: %1\nPID: %2\nDLL 목록:\n")
+                          .arg(QString(res.processName))
+                          .arg(pid);
+
+    if (!dllList.empty()) {
+        for (const std::string &dll : dllList) {
+            message += QString::fromStdString(dll) + "\n";
+        }
+    } else {
+        message += "DLL 정보가 없습니다.";
+    }
+
+    mainLabel->setText(message);
+}
+
+
+
 //    const Result &res = cachedResults[row];
 //    QString message = QString("PID: %1\n프로세스명: %2\n\nDLL 목록:\n").arg(res.pid).arg(res.processName);
 
@@ -301,6 +328,5 @@ void MainWindow::handleRowClicked(int row, int column) {
 //    }
 
 //    QMessageBox::information(this, "프로세스 DLL 목록", message);
-}
 
 
