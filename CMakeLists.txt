@@ -19,12 +19,15 @@ set(SOURCES
     resources/resources.qrc
     src/Result.cpp
     src/ProcessManager.cpp
+    src/DLLAnalyzer.cpp
+
 )
 
 set(HEADERS
     include/ProcessManager.h
     gui/mainwindow.h
     include/Result.h
+    include/DLLAnalyzer.h
 )
 
 set(UI_FILES
@@ -48,9 +51,11 @@ if(QT_VERSION_MAJOR EQUAL 6)
 #  qt5_add_resources(RESOURCE_SOURCES ${RESOURCE_FILES})
 endif()
 
-add_executable(DLLDetect ${SOURCES} ${MOC_SOURCES} ${UIC_SOURCES} ${resources_generated})
+add_executable(DLLDetect ${SOURCES} ${MOC_SOURCES} ${UIC_SOURCES} ${resources_generated}
 
-target_link_libraries(DLLDetect PRIVATE Qt6::Widgets Qt6::Svg Qt6::Core Qt6::Gui)
+)
+
+target_link_libraries(DLLDetect PRIVATE Qt6::Widgets Qt6::Svg Qt6::Core Qt6::Gui psapi kernel32)
 target_include_directories(DLLDetect PRIVATE include)
 # target_sources(DLLDetect PRIVATE resources/resources.qrc)
 
