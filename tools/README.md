@@ -14,3 +14,11 @@
 ## 주의
 - 본 폴더는 데이터 준비를 위한 용도이며,  
   최종 DLLDetect 프로그램 구동에는 필요하지 않습니다.
+
+- `train_model.py` :
+  analyzed_dlls.csv 파일을 읽어 RandomForestClassifier 모델을 학습시키고,
+  학습된 모델을 dll_classifier.pkl로 저장합니다.
+
+- `dll_classifier.pkl` :
+  학습된 머신러닝 모델 파일입니다.
+  추후 DLLDetect 프로그램에서 DLL 정상/비정상 판별에 사용됩니다.
