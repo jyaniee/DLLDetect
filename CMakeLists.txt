@@ -57,6 +57,8 @@ add_executable(DLLDetect ${SOURCES} ${MOC_SOURCES} ${UIC_SOURCES} ${resources_ge
 
 target_link_libraries(DLLDetect PRIVATE Qt6::Widgets Qt6::Svg Qt6::Core Qt6::Gui psapi kernel32)
 target_include_directories(DLLDetect PRIVATE include)
+target_link_libraries(DLLDetect PRIVATE Qt6::Widgets Qt6::Core Qt6::Gui)
+
 # target_sources(DLLDetect PRIVATE resources/resources.qrc)
 
 # if(${QT_VERSION} VERSION_LESS 6.1.0)

@@ -3,7 +3,6 @@
 #include "ProcessManager.h"
 #include "Result.h"
 
-
 #include <iostream>
 #include <QWidget>
 #include <QHBoxLayout>
@@ -21,6 +20,7 @@
 #include <QMessageBox>
 #include <QTableWidget>
 #include <QHeaderView>
+#include <QSizePolicy>
 
 
 MainWindow::MainWindow(QWidget *parent)
@@ -40,6 +40,7 @@ MainWindow::MainWindow(QWidget *parent)
     QVBoxLayout *mainLayout = new QVBoxLayout(central);
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
+
 
     // ▶ 상단바
     QWidget *topBar = new QWidget();
@@ -132,7 +133,7 @@ MainWindow::MainWindow(QWidget *parent)
         )");
 
         btn->setToolTip(stages[index]);
-       // sideLayout->addWidget(btn, 0, Qt::AlignHCenter);
+        // sideLayout->addWidget(btn, 0, Qt::AlignHCenter);
         sideLayout->addWidget(btn);
         stageButtons.append(btn);
 
@@ -170,6 +171,7 @@ MainWindow::MainWindow(QWidget *parent)
     mainContentLayout->addWidget(mainLabel);
     mainContentLayout->addStretch();
 
+    setupDLLArea();
 
 
     // ▶ 조립
@@ -187,6 +189,31 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow() {
     // 기본 소멸자, 비워도 문제 없음
+}
+void MainWindow::setupDLLArea() {
+    // DLL 정보 스크롤 영역 설정
+    dllScrollArea = new QScrollArea(this);
+
+    // 위치 및 크기 설정
+    int tableX = 100; // 테이블의 x 좌표와 동일하게 맞춤 (필요에 따라 조정)
+    int tableWidth = 1200;
+    int tableHeight = 600;
+    int yPosition = 300;
+
+    dllScrollArea->setGeometry(tableX, yPosition, tableWidth, tableHeight);
+    dllScrollArea->setWidgetResizable(true);
+
+    // 배경색 설정 (세 번째 이미지와 동일한 색상)
+    dllScrollArea->setStyleSheet("background-color: #12131A; color: white; border: none;");
+
+    // DLL 정보 컨테이너 위젯
+    QWidget *dllContainer = new QWidget();
+    QVBoxLayout *dllLayout = new QVBoxLayout(dllContainer);
+    dllLayout->setContentsMargins(10, 10, 10, 10);
+    dllLayout->setSpacing(8);
+    dllContainer->setLayout(dllLayout);
+
+    dllScrollArea->setWidget(dllContainer);
 }
 
 void MainWindow::handleStageClick(int index){
@@ -303,19 +330,26 @@ void MainWindow::handleRowClicked(int row, int column) {
     DLLAnalyzer dllAnalyzer;
     std::vector<std::string> dllList = dllAnalyzer.GetLoadedModules(pid);
 
-    QString message = QString("프로세스: %1\nPID: %2\nDLL 목록:\n")
-                          .arg(QString(res.processName))
-                          .arg(pid);
+    // DLL 정보 컨테이너 초기화
+    QVBoxLayout *dllLayout = qobject_cast<QVBoxLayout*>(dllScrollArea->widget()->layout());
+    QLayoutItem *child;
+    while ((child = dllLayout->takeAt(0)) != nullptr) {
+        delete child->widget();
+        delete child;
+    }
+
+    QLabel *title = new QLabel(QString("프로세스: %1\nPID: %2\nDLL 목록:").arg(res.processName).arg(pid));
+    dllLayout->addWidget(title);
 
     if (!dllList.empty()) {
         for (const std::string &dll : dllList) {
-            message += QString::fromStdString(dll) + "\n";
+            QLabel *dllLabel = new QLabel(QString::fromStdString(dll));
+            dllLayout->addWidget(dllLabel);
         }
     } else {
-        message += "DLL 정보가 없습니다.";
+        QLabel *noDLLLabel = new QLabel("DLL 정보가 없습니다.");
+        dllLayout->addWidget(noDLLLabel);
     }
-
-    mainLabel->setText(message);
 }
 
 
@@ -328,5 +362,4 @@ void MainWindow::handleRowClicked(int row, int column) {
 //    }
 
 //    QMessageBox::information(this, "프로세스 DLL 목록", message);
-
 
