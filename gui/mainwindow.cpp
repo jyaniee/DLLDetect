@@ -23,16 +23,24 @@
 #include <QSizePolicy>
 
 
+// ------------------ MainWindow 생성자 ------------------
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent) {
-    QStringList icons = {":/img/home.svg", ":/img/list.svg", ":/img/searching.svg", ":/img/pattern.svg"};
-    QStringList stages = {"Home", "Process", "Detection", "Log"};
-    int index = 0;
+    // ProcessManager 초기화 및 시그널 연결
+    processManager = new ProcessManager(this);
+    connect(processManager, &ProcessManager::scanFinished,
+            this, &MainWindow::onScanResult);
 
+
+    // 기본 설정
     setWindowTitle("Filter Dashboard");
     resize(1280, 800);
 
-    // 전체 윈도우 배경
+    // 아이콘 및 스테이지 설정
+    QStringList icons = {":/img/home.svg", ":/img/list.svg", ":/img/searching.svg", ":/img/pattern.svg"};
+    QStringList stages = {"Home", "Process", "Detection", "Log"};
+
+     // 메인 레이아웃
     QWidget *central = new QWidget(this);
     central->setStyleSheet("background-color: #12131a;");
     setCentralWidget(central);
@@ -42,7 +50,7 @@ MainWindow::MainWindow(QWidget *parent)
     mainLayout->setSpacing(0);
 
 
-    // ▶ 상단바
+    // 상단바 구성 ----------------------------------
     QWidget *topBar = new QWidget();
     topBar->setFixedHeight(60);
     topBar->setStyleSheet("background-color: #12131a;");
@@ -64,7 +72,7 @@ MainWindow::MainWindow(QWidget *parent)
     logo->setFixedSize(24, 24);
     logoLayout->addWidget(logo);
 
-    // 상단바 텍스트
+    // 상단바 타이틀
     QLabel *titleLabel = new QLabel("Content Area");
     titleLabel->setStyleSheet("color: white; font-size: 20px; font-weight: bold;");
 
@@ -75,7 +83,7 @@ MainWindow::MainWindow(QWidget *parent)
     logoSeparator->setStyleSheet("color: #2e2e3f;");
     logoSeparator->setFixedWidth(3);
 
-    // 상단바 레이아웃 구성
+    // 상단바 레이아웃 조립
     topBarLayout->addWidget(logoArea);
     topBarLayout->addSpacing(12);
     topBarLayout->addWidget(logoSeparator);  // 구분선 추가
@@ -89,21 +97,22 @@ MainWindow::MainWindow(QWidget *parent)
     topLine->setFrameShadow(QFrame::Plain);
     topLine->setStyleSheet("color: #2e2e3f;");
 
-    // ▶ 콘텐츠 전체 구역 (좌측 패널 + 본문)
+
+     // 콘텐츠 영역 구성 ----------------------------------
     QWidget *contentArea = new QWidget();
     QHBoxLayout *contentLayout = new QHBoxLayout(contentArea);
     contentLayout->setContentsMargins(0, 0, 0, 0);
     contentLayout->setSpacing(0);
 
-    // ▶ 좌측 패널 (사이드바 크기 60px로 조정)
+    // 사이드 패널 ----------------------------------
     QWidget *sidePanel = new QWidget();
     sidePanel->setFixedWidth(72);  // 기존 80 → 60으로 조정
     sidePanel->setStyleSheet("background-color: #12131a;");
-
     QVBoxLayout *sideLayout = new QVBoxLayout(sidePanel);
     sideLayout->setContentsMargins(10, 10, 10, 10);
     sideLayout->setSpacing(20);
 
+    int index = 0;
     for (const QString &icon : icons) {
         QToolButton *btn = new QToolButton();
         /*
@@ -151,7 +160,7 @@ MainWindow::MainWindow(QWidget *parent)
     sideRightLine->setStyleSheet("color: #2e2e3f;");
     sideRightLine->setLineWidth(1);
 
-    // ▶ 본문 영역
+    // 메인 콘텐츠 ----------------------------------
     QWidget *mainContent = new QWidget();
     QVBoxLayout *mainContentLayout = new QVBoxLayout(mainContent);
     mainContentLayout->setContentsMargins(20, 20, 20, 20);
@@ -171,10 +180,11 @@ MainWindow::MainWindow(QWidget *parent)
     mainContentLayout->addWidget(mainLabel);
     mainContentLayout->addStretch();
 
+    // DLL 영역 생성
     setupDLLArea();
 
 
-    // ▶ 조립
+    // 최종 조립 ----------------------------------
     contentLayout->addWidget(sidePanel);
     contentLayout->addWidget(sideRightLine);
     contentLayout->addWidget(mainContent);
@@ -290,9 +300,11 @@ void MainWindow::clearTable(){
 }
 
 void MainWindow::loadProcesses() {
-    ProcessManager manager;
-    std::vector<Result> results = manager.getProcessList();
+    clearTable();
+    processManager->runScan();
+}
 
+void MainWindow::onScanResult(const std::vector<Result>& results){
     resultTable->clearContents();
     resultTable->setColumnCount(2);
     resultTable->setHorizontalHeaderLabels(QStringList() <<"PID" << "프로세스 이름");
