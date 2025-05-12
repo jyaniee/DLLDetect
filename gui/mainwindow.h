@@ -11,6 +11,7 @@
 #include <QTableWidget>
 #include <QPushButton>
 #include <QComboBox>
+#include "ui_mainwindow.h"
 enum class AppStage {
     Home,
     ProcessSelected,
@@ -41,6 +42,10 @@ private:
     QLabel *mainLabel;
     QTableWidget *resultTable;
     std::vector<Result> cachedResults;
+    QTableWidget *processTable;
+    QTableWidget *dllTable;
+    QScrollArea *dllScrollArea;
+    void setupDLLArea();
 
     void handleStageClick(int index);
     void updateStage(AppStage newStage);

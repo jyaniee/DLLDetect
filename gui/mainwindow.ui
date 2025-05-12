@@ -127,7 +127,7 @@
              <string/>
             </property>
             <property name="pixmap">
-             <pixmap>../../../../Downloads/Apple_logo_black.svg.png</pixmap>
+             <pixmap>../../../Downloads/Apple_logo_black.svg.png</pixmap>
             </property>
             <property name="scaledContents">
              <bool>true</bool>
@@ -153,6 +153,27 @@
       </layout>
      </widget>
     </item>
+
+    <!-- DLL 정보 표시 스크롤 영역 -->
+    <item>
+     <widget class="QScrollArea" name="dllScrollArea">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>500</y>
+        <width>800</width>
+        <height>200</height>
+       </rect>
+      </property>
+      <property name="widgetResizable">
+       <bool>true</bool>
+      </property>
+      <widget class="QWidget" name="dllContainer">
+       <layout class="QVBoxLayout" name="dllLayout"/>
+      </widget>
+     </widget>
+    </item>
+
    </layout>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
