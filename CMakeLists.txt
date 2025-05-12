@@ -20,6 +20,7 @@ set(SOURCES
     src/Result.cpp
     src/ProcessManager.cpp
     src/DLLAnalyzer.cpp
+    include/ProcessManager.h
 
 )
 

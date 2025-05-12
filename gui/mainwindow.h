@@ -12,6 +12,9 @@
 #include <QPushButton>
 #include <QComboBox>
 #include "ui_mainwindow.h"
+
+#include "ProcessManager.h"
+
 enum class AppStage {
     Home,
     ProcessSelected,
@@ -34,6 +37,13 @@ public:
     ~MainWindow();
 
 private:
+    ProcessManager* processManager;
+        std::vector<Result> cachedResults;
+private slots:
+    void onScanResult(const std::vector<Result>& results);
+
+private:
+
     Ui::MainWindow *ui;
     QPushButton *loadButton;
 
@@ -41,7 +51,6 @@ private:
     QVector<QToolButton*> stageButtons;
     QLabel *mainLabel;
     QTableWidget *resultTable;
-    std::vector<Result> cachedResults;
     QTableWidget *processTable;
     QTableWidget *dllTable;
     QScrollArea *dllScrollArea;

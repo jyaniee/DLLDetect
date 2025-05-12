@@ -1,17 +1,21 @@
 #ifndef PROCESSMANAGER_H
 #define PROCESSMANAGER_H
 
+#include <QObject>
 #include <vector>
 #include <QString>
 #include "Result.h"
 
-class ProcessManager
+class ProcessManager : public QObject
 {
+    Q_OBJECT
+
 public:
-    ProcessManager();
+    explicit ProcessManager(QObject* parent = nullptr);
+    void runScan();
 
-
-    std::vector<Result> getProcessList();
+signals:
+    void scanFinished(const std::vector<Result>& results);
 };
 
 #endif
