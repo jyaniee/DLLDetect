@@ -30,6 +30,7 @@ MainWindow::MainWindow(QWidget *parent)
     processManager = new ProcessManager(this);
     connect(processManager, &ProcessManager::scanFinished,
             this, &MainWindow::onScanResult);
+    networkAnalyzer = new NetworkDLLAnalyzer(this);
 
 
     // 기본 설정

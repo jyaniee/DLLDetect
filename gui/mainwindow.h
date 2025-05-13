@@ -45,6 +45,7 @@ private slots:
 private:
 
     Ui::MainWindow *ui;
+    NetworkDLLAnalyzer *networkAnalyzer;
     QPushButton *loadButton;
 
     AppStage currentStage = AppStage::Home;
