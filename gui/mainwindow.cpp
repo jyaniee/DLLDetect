@@ -31,6 +31,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(processManager, &ProcessManager::scanFinished,
             this, &MainWindow::onScanResult);
     networkAnalyzer = new NetworkDLLAnalyzer(this);
+    connect(networkAnalyzer, &NetworkDLLAnalyzer::analysisFinished,
+            this, &MainWindow::onAnalysisFinished);
+    networkAnalyzer = new NetworkDLLAnalyzer(this);
 
 
     // 기본 설정
@@ -352,17 +355,43 @@ void MainWindow::handleRowClicked(int row, int column) {
     }
 
     QLabel *title = new QLabel(QString("프로세스: %1\nPID: %2\nDLL 목록:").arg(res.processName).arg(pid));
+    title->setStyleSheet("color: white; font-weight: bold;");
     dllLayout->addWidget(title);
 
     if (!dllList.empty()) {
         for (const std::string &dll : dllList) {
-            QLabel *dllLabel = new QLabel(QString::fromStdString(dll));
-            dllLayout->addWidget(dllLabel);
+            QString dllPath = QString::fromStdString(dll);
+
+            QPushButton *dllButton = new QPushButton(dllPath);
+            dllButton->setStyleSheet(R"(
+                QPushButton {
+                    color: white;
+                    background-color: #1e1e2e;
+                    border: 1px solid #2e2e3f;
+                    padding: 4px;
+                    text-align: left;
+                }
+                QPushButton:hover {
+                    background-color: #2e2e3f;
+                }
+            )");
+
+            // 클릭 시 AI 분석 요청
+            connect(dllButton, &QPushButton::clicked, this, [=]() {
+                networkAnalyzer->analyzeDLL(dllPath);
+            });
+
+            dllLayout->addWidget(dllButton);
         }
     } else {
         QLabel *noDLLLabel = new QLabel("DLL 정보가 없습니다.");
+        noDLLLabel->setStyleSheet("color: gray;");
         dllLayout->addWidget(noDLLLabel);
     }
+}
+
+void MainWindow::onAnalysisFinished(const QString &result) {
+    QMessageBox::information(this, "DLL 분석 결과", result);
 }
 
 

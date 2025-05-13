@@ -41,6 +41,7 @@ private:
         std::vector<Result> cachedResults;
 private slots:
     void onScanResult(const std::vector<Result>& results);
+    void onAnalysisFinished(const QString &result);  // <-- 추가
 
 private:
 
