@@ -9,7 +9,7 @@ set(CMAKE_AUTORCC ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 include_directories(include)
 
 set(SOURCES
@@ -18,7 +18,6 @@ set(SOURCES
     src/ProcessManager.cpp
     resources/resources.qrc
     src/Result.cpp
-    src/ProcessManager.cpp
     src/DLLAnalyzer.cpp
 )
 
@@ -44,7 +43,7 @@ if(QT_VERSION_MAJOR EQUAL 6)
   qt6_wrap_ui(UIC_SOURCES ${UI_FILES})
 endif()
 
-add_executable(DLLDetect ${SOURCES} ${MOC_SOURCES} ${UIC_SOURCES} ${resources_generated})
+add_executable(DLLDetect ${SOURCES} ${MOC_SOURCES} ${HEADERS} ${UIC_SOURCES} ${resources_generated})
 
 target_link_libraries(DLLDetect PRIVATE Qt6::Widgets Qt6::Svg Qt6::Core Qt6::Gui Qt6::Network psapi kernel32)
 target_include_directories(DLLDetect PRIVATE include)
