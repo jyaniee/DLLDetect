@@ -12,7 +12,7 @@
 #include <QPushButton>
 #include <QComboBox>
 #include "ui_mainwindow.h"
-
+#include "NetworkDLLAnalyzer.h"
 #include "ProcessManager.h"
 
 enum class AppStage {

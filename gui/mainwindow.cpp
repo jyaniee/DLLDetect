@@ -2,7 +2,7 @@
 #include "mainwindow.h"
 #include "ProcessManager.h"
 #include "Result.h"
-
+#include "NetworkDLLAnalyzer.h"
 #include <iostream>
 #include <QWidget>
 #include <QHBoxLayout>
