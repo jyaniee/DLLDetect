@@ -43,7 +43,9 @@ if(QT_VERSION_MAJOR EQUAL 6)
   qt6_wrap_ui(UIC_SOURCES ${UI_FILES})
 endif()
 
-add_executable(DLLDetect ${SOURCES} ${MOC_SOURCES} ${HEADERS} ${UIC_SOURCES} ${resources_generated})
+add_executable(DLLDetect ${SOURCES} ${MOC_SOURCES} ${HEADERS} ${UIC_SOURCES} ${resources_generated}
+  include/NetworkDLLAnalyzer.h
+  src/NetworkDLLAnalyzer.cpp)
 
 target_link_libraries(DLLDetect PRIVATE Qt6::Widgets Qt6::Svg Qt6::Core Qt6::Gui Qt6::Network psapi kernel32)
 target_include_directories(DLLDetect PRIVATE include)
