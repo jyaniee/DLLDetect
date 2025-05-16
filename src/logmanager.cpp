@@ -5,8 +5,10 @@
 #include <QDateTime>
 #include <QStandardPaths>
 #include <QDebug>
+#include "Result.h"
 
-void LogManager::writeLog(const QString& pid, const QString& dllPath, int prediction, const QString& source) {
+void LogManager::writeLog(const QString& dllPath, int prediction, const QString& source,
+                          const std::vector<Result>& cachedResults) {
     QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
     QString filePath = desktopPath + "/log.csv";
 
@@ -18,6 +20,14 @@ void LogManager::writeLog(const QString& pid, const QString& dllPath, int predic
 
         if (!fileExists) {
             out << "timestamp,PID,dll_path,result\n";
+        }
+
+        QString pid = "Unknown";
+        for (const Result &res : cachedResults) {
+            if (res.dllList.contains(dllPath)) {
+                pid = QString::number(res.pid);
+                break;
+            }
         }
 
         QString timestamp = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");

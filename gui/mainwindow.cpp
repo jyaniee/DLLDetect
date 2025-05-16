@@ -414,17 +414,7 @@ void MainWindow::onAnalysisFinished(const QString &resultJson) {
         if (obj.contains("prediction")) {
             int prediction = obj["prediction"].toInt();
             QString source = obj.value("source").toString();
-
-            // ✅ pid 추출 (cachedResults에서 DLL 경로 기준으로)
-            QString pid = "Unknown";
-            for (const Result& res : cachedResults) {
-                if (res.dllList.contains(lastAnalyzedDllPath)) {
-                    pid = QString::number(res.pid);
-                    break;
-                }
-            }
-
-            LogManager::writeLog(pid, lastAnalyzedDllPath, prediction, source);
+            LogManager::writeLog(lastAnalyzedDllPath, prediction, source, cachedResults);
         }
     }
 }
