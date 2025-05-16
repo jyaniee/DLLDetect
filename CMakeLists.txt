@@ -19,6 +19,7 @@ set(SOURCES
     resources/resources.qrc
     src/Result.cpp
     src/DLLAnalyzer.cpp
+    src/WhitelistManager.cpp
 )
 
 set(HEADERS
@@ -26,6 +27,7 @@ set(HEADERS
     gui/mainwindow.h
     include/Result.h
     include/DLLAnalyzer.h
+    include/WhitelistManager.h
 )
 
 set(UI_FILES
@@ -46,6 +48,8 @@ endif()
 add_executable(DLLDetect ${SOURCES} ${MOC_SOURCES} ${HEADERS} ${UIC_SOURCES} ${resources_generated}
   include/NetworkDLLAnalyzer.h
   src/NetworkDLLAnalyzer.cpp
+  include/WhitelistManager.h
+  src/WhitelistManager.cpp
   )
 
 target_link_libraries(DLLDetect PRIVATE Qt6::Widgets Qt6::Svg Qt6::Core Qt6::Gui Qt6::Network psapi kernel32)
