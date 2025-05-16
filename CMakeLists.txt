@@ -20,6 +20,7 @@ set(SOURCES
     src/Result.cpp
     src/DLLAnalyzer.cpp
     src/WhitelistManager.cpp
+    src/LogManager.cpp
 )
 
 set(HEADERS
@@ -28,6 +29,7 @@ set(HEADERS
     include/Result.h
     include/DLLAnalyzer.h
     include/WhitelistManager.h
+    include/LogManager.h
 )
 
 set(UI_FILES

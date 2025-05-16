@@ -15,6 +15,12 @@
 #include "NetworkDLLAnalyzer.h"
 #include "ProcessManager.h"
 #include "WhitelistManager.h"
+#include <QFile>
+#include <QTextStream>
+#include <QDateTime>
+#include <QStandardPaths>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 enum class AppStage {
     Home,
@@ -44,9 +50,12 @@ private:
 private slots:
     void onScanResult(const std::vector<Result>& results);
     void onAnalysisFinished(const QString &result);  // <-- 추가
+private:
+    void saveLog(const QString& dllPath, int prediction, const QString& source);
+
 
 private:
-
+    QString lastAnalyzedDllPath;
     Ui::MainWindow *ui;
     NetworkDLLAnalyzer *networkAnalyzer;
     QPushButton *loadButton;

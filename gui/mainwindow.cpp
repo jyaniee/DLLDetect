@@ -22,6 +22,7 @@
 #include <QHeaderView>
 #include <QSizePolicy>
 #include <QFileInfo>
+#include "LogManager.h"
 
 
 // ------------------ MainWindow 생성자 ------------------
@@ -344,6 +345,7 @@ void MainWindow::onScanResult(const std::vector<Result>& results){
 void MainWindow::warnUser(const QString &msg){
     QMessageBox::warning(this, "안내", msg);
 }
+
 void MainWindow::handleRowClicked(int row, int column) {
     if (row < 0 || row >= static_cast<int>(cachedResults.size())) return;
 
@@ -385,7 +387,7 @@ void MainWindow::handleRowClicked(int row, int column) {
 
             connect(dllButton, &QPushButton::clicked, this, [=]() {
                 QString dllName = QFileInfo(dllPath).fileName();
-
+                lastAnalyzedDllPath = dllPath;
                 if (whitelistManager->isWhitelisted(dllName)) {
                     emit networkAnalyzer->analysisFinished("정상 DLL입니다 (화이트리스트)");
                 } else {
@@ -403,9 +405,30 @@ void MainWindow::handleRowClicked(int row, int column) {
     }
 }
 
-void MainWindow::onAnalysisFinished(const QString &result) {
-    QMessageBox::information(this, "DLL 분석 결과", result);
+void MainWindow::onAnalysisFinished(const QString &resultJson) {
+    QMessageBox::information(this, "DLL 분석 결과", resultJson);
+
+    QJsonDocument doc = QJsonDocument::fromJson(resultJson.toUtf8());
+    if (doc.isObject()) {
+        QJsonObject obj = doc.object();
+        if (obj.contains("prediction")) {
+            int prediction = obj["prediction"].toInt();
+            QString source = obj.value("source").toString();
+
+            // ✅ pid 추출 (cachedResults에서 DLL 경로 기준으로)
+            QString pid = "Unknown";
+            for (const Result& res : cachedResults) {
+                if (res.dllList.contains(lastAnalyzedDllPath)) {
+                    pid = QString::number(res.pid);
+                    break;
+                }
+            }
+
+            LogManager::writeLog(pid, lastAnalyzedDllPath, prediction, source);
+        }
+    }
 }
+
 
 
 
