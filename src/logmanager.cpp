@@ -1,4 +1,3 @@
-// LogManager.cpp
 #include "LogManager.h"
 #include <QFile>
 #include <QTextStream>
@@ -22,6 +21,7 @@ void LogManager::writeLog(const QString& dllPath, int prediction, const QString&
             out << "timestamp,PID,dll_path,result\n";
         }
 
+        // ✅ PID 추출
         QString pid = "Unknown";
         for (const Result &res : cachedResults) {
             if (res.dllList.contains(dllPath)) {
@@ -30,6 +30,7 @@ void LogManager::writeLog(const QString& dllPath, int prediction, const QString&
             }
         }
 
+        // ✅ 로그 메시지 생성
         QString timestamp = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
         QString resultMsg;
 
@@ -41,7 +42,12 @@ void LogManager::writeLog(const QString& dllPath, int prediction, const QString&
             resultMsg = "비정상 DLL입니다";
         }
 
-        out << QString("%1,%2,%3,%4\n").arg(timestamp, pid, dllPath, resultMsg);
+        QString logLine = QString("%1,%2,%3,%4\n").arg(timestamp, pid, dllPath, resultMsg);
+        out << logLine;
+
         file.close();
+
+        // ✅ 콘솔 로그 출력 (개발 중 확인용)
+        qDebug() << "[로그 저장 완료]" << logLine.trimmed();
     }
 }

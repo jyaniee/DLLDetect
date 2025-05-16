@@ -389,6 +389,7 @@ void MainWindow::handleRowClicked(int row, int column) {
                 QString dllName = QFileInfo(dllPath).fileName();
                 lastAnalyzedDllPath = dllPath;
                 if (whitelistManager->isWhitelisted(dllName)) {
+                    LogManager::writeLog(dllPath, 0, "whitelist", cachedResults);
                     emit networkAnalyzer->analysisFinished("정상 DLL입니다 (화이트리스트)");
                 } else {
                     networkAnalyzer->analyzeDLL(dllPath);
