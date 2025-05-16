@@ -21,6 +21,7 @@
 #include <QTableWidget>
 #include <QHeaderView>
 #include <QSizePolicy>
+#include <QFileInfo>
 
 
 // ------------------ MainWindow 생성자 ------------------
@@ -33,7 +34,13 @@ MainWindow::MainWindow(QWidget *parent)
     networkAnalyzer = new NetworkDLLAnalyzer(this);
     connect(networkAnalyzer, &NetworkDLLAnalyzer::analysisFinished,
             this, &MainWindow::onAnalysisFinished);
-    networkAnalyzer = new NetworkDLLAnalyzer(this);
+    // ✅ 화이트리스트 매니저 초기화
+    whitelistManager = new WhitelistManager();
+    if (!whitelistManager->loadWhitelist(":/whitelist.txt")) {
+        qDebug() << "[Whitelist] 로드 실패";
+    } else {
+        qDebug() << "[Whitelist] 로드 성공";
+    }
 
 
     // 기본 설정
@@ -376,10 +383,16 @@ void MainWindow::handleRowClicked(int row, int column) {
                 }
             )");
 
-            // 클릭 시 AI 분석 요청
             connect(dllButton, &QPushButton::clicked, this, [=]() {
-                networkAnalyzer->analyzeDLL(dllPath);
+                QString dllName = QFileInfo(dllPath).fileName();
+
+                if (whitelistManager->isWhitelisted(dllName)) {
+                    emit networkAnalyzer->analysisFinished("정상 DLL입니다 (화이트리스트)");
+                } else {
+                    networkAnalyzer->analyzeDLL(dllPath);
+                }
             });
+
 
             dllLayout->addWidget(dllButton);
         }

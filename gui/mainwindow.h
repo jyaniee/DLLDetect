@@ -14,6 +14,7 @@
 #include "ui_mainwindow.h"
 #include "NetworkDLLAnalyzer.h"
 #include "ProcessManager.h"
+#include "WhitelistManager.h"
 
 enum class AppStage {
     Home,
@@ -39,6 +40,7 @@ public:
 private:
     ProcessManager* processManager;
         std::vector<Result> cachedResults;
+    WhitelistManager* whitelistManager;
 private slots:
     void onScanResult(const std::vector<Result>& results);
     void onAnalysisFinished(const QString &result);  // <-- 추가
