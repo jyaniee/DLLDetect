@@ -417,15 +417,6 @@ void MainWindow::onAnalysisFinished(const QString &resultJson) {
             LogManager::writeLog(lastAnalyzedDllPath, prediction, source, cachedResults);
         }
     }
-
-            QLabel *dllLabel = new QLabel(QString::fromStdString(dll));
-            dllLayout->addWidget(dllLabel);
-        }
-    } else {
-        QLabel *noDLLLabel = new QLabel("DLL 정보가 없습니다.");
-        dllLayout->addWidget(noDLLLabel);
-    }
-
 }
 
 
