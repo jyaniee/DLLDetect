@@ -1,27 +1,27 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(DLLDetect VERSION 0.1 LANGUAGES CXX)
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Svg)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Svg Network)
+
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 include_directories(include)
-# add_subdirectory(src)
+
 set(SOURCES
     main.cpp
     gui/mainwindow.cpp
     src/ProcessManager.cpp
     resources/resources.qrc
     src/Result.cpp
-    src/ProcessManager.cpp
     src/DLLAnalyzer.cpp
+    src/WhitelistManager.cpp
+    src/LogManager.cpp
     include/ProcessManager.h
-
 )
 
 set(HEADERS
@@ -29,6 +29,8 @@ set(HEADERS
     gui/mainwindow.h
     include/Result.h
     include/DLLAnalyzer.h
+    include/WhitelistManager.h
+    include/LogManager.h
 )
 
 set(UI_FILES
@@ -36,27 +38,24 @@ set(UI_FILES
 )
 
 set(RESOURCE_FILES
-  resources/resources.qrc
+    resources/resources.qrc
 )
 
 qt6_add_resources(resources_generated resources/resources.qrc)
 
-
 if(QT_VERSION_MAJOR EQUAL 6)
   qt6_wrap_cpp(MOC_SOURCES ${HEADERS})
   qt6_wrap_ui(UIC_SOURCES ${UI_FILES})
-#  qt6_add_resources(RESOURCE_SOURCES ${RESOURCE_FILES})
-#else()
-#  qt5_wrap_cpp(MOC_SOURCES ${HEADERS})
-#  qt5_wrap_ui(UIC_SOURCES ${UI_FILES})
-#  qt5_add_resources(RESOURCE_SOURCES ${RESOURCE_FILES})
 endif()
 
-add_executable(DLLDetect ${SOURCES} ${MOC_SOURCES} ${UIC_SOURCES} ${resources_generated}
+add_executable(DLLDetect ${SOURCES} ${MOC_SOURCES} ${HEADERS} ${UIC_SOURCES} ${resources_generated}
+  include/NetworkDLLAnalyzer.h
+  src/NetworkDLLAnalyzer.cpp
+  include/WhitelistManager.h
+  src/WhitelistManager.cpp
+  )
 
-)
-
-target_link_libraries(DLLDetect PRIVATE Qt6::Widgets Qt6::Svg Qt6::Core Qt6::Gui psapi kernel32)
+target_link_libraries(DLLDetect PRIVATE Qt6::Widgets Qt6::Svg Qt6::Core Qt6::Gui Qt6::Network psapi kernel32)
 target_include_directories(DLLDetect PRIVATE include)
 target_link_libraries(DLLDetect PRIVATE Qt6::Widgets Qt6::Core Qt6::Gui)
 
