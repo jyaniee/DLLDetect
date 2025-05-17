@@ -21,6 +21,7 @@ set(SOURCES
     src/DLLAnalyzer.cpp
     src/WhitelistManager.cpp
     src/LogManager.cpp
+    include/ProcessManager.h
 )
 
 set(HEADERS
@@ -56,6 +57,13 @@ add_executable(DLLDetect ${SOURCES} ${MOC_SOURCES} ${HEADERS} ${UIC_SOURCES} ${r
 
 target_link_libraries(DLLDetect PRIVATE Qt6::Widgets Qt6::Svg Qt6::Core Qt6::Gui Qt6::Network psapi kernel32)
 target_include_directories(DLLDetect PRIVATE include)
+target_link_libraries(DLLDetect PRIVATE Qt6::Widgets Qt6::Core Qt6::Gui)
+
+# target_sources(DLLDetect PRIVATE resources/resources.qrc)
+
+# if(${QT_VERSION} VERSION_LESS 6.1.0)
+#  set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.DLLDetect)
+# endif()
 
 set_target_properties(DLLDetect PROPERTIES
     ${BUNDLE_ID_OPTION}

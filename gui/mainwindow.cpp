@@ -43,7 +43,6 @@ MainWindow::MainWindow(QWidget *parent)
         qDebug() << "[Whitelist] 로드 성공";
     }
 
-
     // 기본 설정
     setWindowTitle("Filter Dashboard");
     resize(1280, 800);
@@ -418,6 +417,15 @@ void MainWindow::onAnalysisFinished(const QString &resultJson) {
             LogManager::writeLog(lastAnalyzedDllPath, prediction, source, cachedResults);
         }
     }
+
+            QLabel *dllLabel = new QLabel(QString::fromStdString(dll));
+            dllLayout->addWidget(dllLabel);
+        }
+    } else {
+        QLabel *noDLLLabel = new QLabel("DLL 정보가 없습니다.");
+        dllLayout->addWidget(noDLLLabel);
+    }
+
 }
 
 

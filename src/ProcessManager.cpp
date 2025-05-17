@@ -10,6 +10,7 @@ ProcessManager::ProcessManager(QObject* parent)
     : QObject(parent) {}
 
 // runScan(): 실행 중인 프로세스를 스캔하여 DLL 목록과 함께 결과를 시그널로 전송
+
 void ProcessManager::runScan()
 {
     std::vector<Result> processList;
@@ -20,6 +21,7 @@ void ProcessManager::runScan()
     if (hSnapshot == INVALID_HANDLE_VALUE) {
         emit scanFinished(processList);  // 실패했더라도 빈 리스트 emit
         return;
+
     }
 
     PROCESSENTRY32 pe;
@@ -47,7 +49,6 @@ void ProcessManager::runScan()
 
     // 핸들 닫기
     CloseHandle(hSnapshot);
-
     // 모든 결과를 시그널로 전송
     emit scanFinished(processList);
 }

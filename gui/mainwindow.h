@@ -21,6 +21,7 @@
 #include <QStandardPaths>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include "ProcessManager.h"
 
 enum class AppStage {
     Home,
@@ -56,6 +57,7 @@ private:
 
 private:
     QString lastAnalyzedDllPath;
+
     Ui::MainWindow *ui;
     NetworkDLLAnalyzer *networkAnalyzer;
     QPushButton *loadButton;
