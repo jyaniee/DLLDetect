@@ -420,6 +420,32 @@ void MainWindow::handleRowClicked(int row, int column) {
         for (const std::string &dll : dllList) {
             QString dllPath = QString::fromStdString(dll);
 
+            QPushButton *dllButton = new QPushButton(dllPath);
+            dllButton->setStyleSheet(R"(
+                QPushButton {
+                    color: white;
+                    background-color: #12131A;  /* 배경색과 동일하게 */
+                    border: 1px solid #2e2e3f;   /* 테두리 색상 */
+                    padding: 4px;
+                    text-align: left;
+                }
+                QPushButton:hover {
+                    background-color: #2e2e3f;  /* Hover 시 배경색 */
+                }
+            )");
+
+
+            connect(dllButton, &QPushButton::clicked, this, [=]() {
+                QString dllName = QFileInfo(dllPath).fileName();
+                lastAnalyzedDllPath = dllPath;
+                if (whitelistManager->isWhitelisted(dllName)) {
+                    LogManager::writeLog(dllPath, 0, "whitelist", cachedResults);
+                    emit networkAnalyzer->analysisFinished("정상 DLL입니다 (화이트리스트)");
+                } else {
+                    networkAnalyzer->analyzeDLL(dllPath);
+                }
+            });
+
             QLabel *dllLabel = new QLabel(dllPath);
             dllLabel->setStyleSheet(R"(
                 color: white;
