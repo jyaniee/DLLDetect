@@ -93,10 +93,10 @@ private:
     void loadProcesses();
     void clearTable();
     void handleRowClicked(int row, int column);
-    void setupDetectButtonArea();
-    void setupDetectionMethodArea();
+    void setupDetectButtonArea(QVBoxLayout* layout);
+    void setupDetectionMethodArea(QVBoxLayout* layout);
     void startDetectionWithMethod(const QString& method);
-    void setupDetectionResultArea();
+    void setupDetectionResultArea(QVBoxLayout* layout);
     void showCleanResult();
     void showSuspiciousDLLs(const std::vector<std::pair<QString, QString>>& dlls);
 };
