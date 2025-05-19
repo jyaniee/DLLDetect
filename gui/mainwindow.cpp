@@ -87,7 +87,7 @@ MainWindow::MainWindow(QWidget *parent)
     logoLayout->addWidget(logo);
 
     // 상단바 타이틀
-    QLabel *titleLabel = new QLabel("Content Area");
+    titleLabel = new QLabel("Content Area");
     titleLabel->setStyleSheet("color: white; font-size: 20px; font-weight: bold;");
 
     // 로고와 텍스트 사이 구분선 추가
@@ -203,6 +203,9 @@ MainWindow::MainWindow(QWidget *parent)
     // DLL 영역 생성
     setupDLLArea();
     setupDetectButtonArea();
+
+    // 탐지 방식 선택 영역
+    setupDetectionMethodArea();
 
     // 최종 조립 ----------------------------------
     contentLayout->addWidget(sidePanel);
@@ -350,23 +353,31 @@ void MainWindow::updateStage(AppStage newStage){
         detectButton->setVisible(false);
     }
 
+    if (detectionMethodWidget) detectionMethodWidget->setVisible(false);
+
+
     if(mainLabel){
         switch(currentStage){
         case AppStage::Home:
             mainLabel->setText("홈");
+            titleLabel->setText("Home");
             clearTable();
             clearDLLArea();
             break;
         case AppStage::ProcessSelected:
             mainLabel->setText("프로세스 선택");
+            titleLabel->setText("Process");
             break;
         case AppStage::DetectionStarted:
             mainLabel->setText("DLL 탐지");
+            titleLabel->setText("Detection");
             clearTable();
             clearDLLArea();
+            if(detectionMethodWidget) detectionMethodWidget->show();
             break;
         case AppStage::LogSaved:
             mainLabel->setText("로그 저장");
+            titleLabel->setText("Log");
             break;
         }
     }
@@ -527,7 +538,114 @@ void MainWindow::onAnalysisFinished(const QString &resultJson) {
     }
 }
 
+void MainWindow::setupDetectionMethodArea() {
+    detectionMethodWidget = new QWidget(this);
+    QVBoxLayout* outerLayout = new QVBoxLayout(detectionMethodWidget);
+    outerLayout->setContentsMargins(20, 20, 20, 20);
+    outerLayout->setSpacing(16);
 
+    QLabel* title = new QLabel("탐지 방식을 선택하세요:");
+    title->setStyleSheet("color: white; font-weight: bold; font-size: 16px;");
+    outerLayout->addWidget(title);
+
+    // 버튼 레이아웃
+    QGridLayout* grid = new QGridLayout();
+    grid->setSpacing(12);
+
+    QString baseStyle = R"(
+        QPushButton {
+            background-color: #1e1e2e;
+            color: white;
+            padding: 15px;
+            font-size: 14px;
+            border: 1px solid #2e2e3f;
+            border-radius: 10px;
+        }
+        QPushButton:checked {
+            background-color: #3e3e5e;
+            border: 2px solid #7aa2f7;
+        }
+    )";
+
+    pebButton = new QPushButton("PEB 기반");
+    hookButton = new QPushButton("훅 기반");
+    entropyButton = new QPushButton("엔트로피 기반");
+    networkButton = new QPushButton("네트워크 기반");
+
+    QList<QPushButton*> buttons = {pebButton, hookButton, entropyButton, networkButton};
+    int row = 0, col = 0;
+    for (QPushButton* btn : buttons) {
+        btn->setCheckable(true);
+        btn->setStyleSheet(baseStyle);
+        btn->setMinimumWidth(180);
+        btn->setMinimumHeight(60);
+        grid->addWidget(btn, row, col);
+
+        connect(btn, &QPushButton::clicked, this, [=]() {
+            // 다른 버튼들 전부 체크 해제
+            for (QPushButton* other : buttons) {
+                if (other != btn) other->setChecked(false);
+            }
+            selectedDetectionButton = btn;  // 현재 선택된 버튼 저장
+        });
+
+        col++;
+        if (col == 2) { row++; col = 0; }
+    }
+
+    outerLayout->addLayout(grid);
+
+    // 실행 버튼
+    QPushButton* runBtn = new QPushButton("탐지 실행");
+    runBtn->setStyleSheet(R"(
+        QPushButton {
+            background-color: #7aa2f7;
+            color: white;
+            font-weight: bold;
+            padding: 10px 20px;
+            border-radius: 6px;
+        }
+        QPushButton:hover {
+            background-color: #5e7ddc;
+        }
+    )");
+    runBtn->setFixedSize(120, 40);
+
+    connect(runBtn, &QPushButton::clicked, this, [=]() {
+        if (!selectedDetectionButton) {
+            QMessageBox::warning(this, "선택 필요", "탐지 방식을 선택해주세요.");
+            return;
+        }
+        QString method = selectedDetectionButton->text();
+        startDetectionWithMethod(method);
+    });
+
+    outerLayout->addWidget(runBtn, 0, Qt::AlignRight);
+
+    detectionMethodWidget->hide();  // 초기엔 숨김
+    mainContentLayout->insertWidget(0, detectionMethodWidget);  // 상단에 추가
+}
+
+
+// 현재는 예시로 탐지 방식을 작성해둔거에용
+void MainWindow::startDetectionWithMethod(const QString& method) {
+    qDebug() << "선택된 탐지 방식:" << method;
+    if (method == "PEB 기반") {
+        qDebug() << "PEB 탐지 수행";
+        // PEB 기반 탐지 실행
+    } else if (method == "훅 기반") {
+        qDebug() << "훅 기반 탐지 수행";
+        // 훅 기반 탐지 실행
+    } else if (method == "엔트로피 기반") {
+        qDebug() << "엔트로피 탐지 수행";
+        // 엔트로피 분석 실행
+    } else if (method == "네트워크 기반") {
+        qDebug() << "네트워크 API 탐지 수행";
+        // 네트워크 관련 DLL 분석
+    } else {
+        qDebug() << "알 수 없는 탐지 방식:" << method;
+    }
+}
 
 
 //    const Result &res = cachedResults[row];
