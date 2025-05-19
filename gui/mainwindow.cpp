@@ -226,9 +226,9 @@ void MainWindow::setupDLLArea() {
 
     // 위치 및 크기 설정
     int tableX = 100; // 테이블의 x 좌표와 동일하게 맞춤 (필요에 따라 조정)
-    int tableWidth = 1200;
+    int tableWidth = 1160;
     int tableHeight = 600;
-    int yPosition = 300;
+    int yPosition = 350;
 
     dllScrollArea->setGeometry(tableX, yPosition, tableWidth, tableHeight);
     dllScrollArea->setWidgetResizable(true);
@@ -422,17 +422,18 @@ void MainWindow::handleRowClicked(int row, int column) {
 
             QPushButton *dllButton = new QPushButton(dllPath);
             dllButton->setStyleSheet(R"(
-                QPushButton {
-                    color: white;
-                    background-color: #1e1e2e;
-                    border: 1px solid #2e2e3f;
-                    padding: 4px;
-                    text-align: left;
-                }
-                QPushButton:hover {
-                    background-color: #2e2e3f;
-                }
-            )");
+    QPushButton {
+        color: white;
+        background-color: #12131A;  /* 배경색과 동일하게 */
+        border: 1px solid #2e2e3f;   /* 테두리 색상 */
+        padding: 4px;
+        text-align: left;
+    }
+    QPushButton:hover {
+        background-color: #2e2e3f;  /* Hover 시 배경색 */
+    }
+)");
+
 
             connect(dllButton, &QPushButton::clicked, this, [=]() {
                 QString dllName = QFileInfo(dllPath).fileName();
@@ -450,7 +451,14 @@ void MainWindow::handleRowClicked(int row, int column) {
         }
     } else {
         QLabel *noDLLLabel = new QLabel("DLL 정보가 없습니다.");
-        noDLLLabel->setStyleSheet("color: gray;");
+        noDLLLabel->setStyleSheet(R"(
+        color: gray;
+        padding-top: 10px;  /* 위쪽에 약간의 패딩을 추가 */
+        text-align: center;
+    )");
+
+        noDLLLabel->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
+
         dllLayout->addWidget(noDLLLabel);
     }
 }
