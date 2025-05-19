@@ -6,5 +6,10 @@
         <file>img/pattern.svg</file>
         <file>img/searching.svg</file>
         <file>whitelist.txt</file>
+        <file>fonts/DMSans-Bold.ttf</file>
+        <file>fonts/DMSans-ExtraBold.ttf</file>
+        <file>fonts/DMSans-Light.ttf</file>
+        <file>fonts/DMSans-Medium.ttf</file>
+        <file>fonts/DMSans-Regular.ttf</file>
     </qresource>
 </RCC>
