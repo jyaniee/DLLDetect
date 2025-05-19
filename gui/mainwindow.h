@@ -74,6 +74,17 @@ private:
     QVBoxLayout* dllLayout;
     QPushButton* detectButton = nullptr;
     QVBoxLayout* mainContentLayout = nullptr;
+    QWidget* detectionMethodWidget = nullptr;
+    QPushButton* selectedDetectionButton = nullptr;
+    QPushButton* pebButton = nullptr;
+    QPushButton* hookButton = nullptr;
+    QPushButton* entropyButton = nullptr;
+    QPushButton* networkButton = nullptr;
+    QLabel *titleLabel;
+    QWidget* detectionResultWidget = nullptr;
+    QLabel* resultStatusLabel = nullptr;
+    QTableWidget* dllResultTable = nullptr;
+
     void setupDLLArea();
     void clearDLLArea();
     void handleStageClick(int index);
@@ -83,7 +94,11 @@ private:
     void clearTable();
     void handleRowClicked(int row, int column);
     void setupDetectButtonArea();
-
+    void setupDetectionMethodArea();
+    void startDetectionWithMethod(const QString& method);
+    void setupDetectionResultArea();
+    void showCleanResult();
+    void showSuspiciousDLLs(const std::vector<std::pair<QString, QString>>& dlls);
 };
 
 
