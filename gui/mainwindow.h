@@ -81,6 +81,10 @@ private:
     QPushButton* entropyButton = nullptr;
     QPushButton* networkButton = nullptr;
     QLabel *titleLabel;
+    QWidget* detectionResultWidget = nullptr;
+    QLabel* resultStatusLabel = nullptr;
+    QTableWidget* dllResultTable = nullptr;
+
     void setupDLLArea();
     void clearDLLArea();
     void handleStageClick(int index);
@@ -92,6 +96,9 @@ private:
     void setupDetectButtonArea();
     void setupDetectionMethodArea();
     void startDetectionWithMethod(const QString& method);
+    void setupDetectionResultArea();
+    void showCleanResult();
+    void showSuspiciousDLLs(const std::vector<std::pair<QString, QString>>& dlls);
 };
 
 
