@@ -250,6 +250,9 @@ void MainWindow::handleStageClick(int index){
     switch (index){
     case 0: // HOME
         updateStage(AppStage::Home);
+        resultTable->hide();
+        dllScrollArea->hide();
+        logViewer->hide();
         break;
     case 1: // 프로세스 목록
         updateStage(AppStage::ProcessSelected);
