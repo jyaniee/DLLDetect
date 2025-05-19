@@ -62,6 +62,7 @@ private:
     void loadProcesses();
     void clearTable();
     void handleRowClicked(int row, int column);
+    void clearDLLList();
 
 };
 

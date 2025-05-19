@@ -277,6 +277,7 @@ void MainWindow::updateStage(AppStage newStage){
         case AppStage::Home:
             mainLabel->setText("홈");
             clearTable();
+            clearDLLList();
             break;
         case AppStage::ProcessSelected:
             mainLabel->setText("프로세스 선택");
@@ -284,6 +285,7 @@ void MainWindow::updateStage(AppStage newStage){
         case AppStage::DetectionStarted:
             mainLabel->setText("DLL 탐지");
             clearTable();
+            clearDLLList();
             break;
         case AppStage::LogSaved:
             mainLabel->setText("로그 저장");
@@ -327,6 +329,23 @@ void MainWindow::onScanResult(const std::vector<Result>& results){
 
     if (results.empty()) {
         QMessageBox::information(this, "결과 없음", "프로세스를 불러오지 못했습니다.");
+    }
+}
+void MainWindow::clearDLLList() {
+    QWidget *dllContainer = dllScrollArea->widget();
+    if (!dllContainer) return;
+
+    QVBoxLayout *layout = qobject_cast<QVBoxLayout*>(dllContainer->layout());
+    if (!layout) return;
+
+    // 레이아웃 내부의 모든 위젯 제거
+    QLayoutItem *item;
+    while ((item = layout->takeAt(0)) != nullptr) {
+        QWidget *widget = item->widget();
+        if (widget) {
+            widget->deleteLater();  // 메모리 해제
+        }
+        delete item;
     }
 }
 
