@@ -22,6 +22,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include "ProcessManager.h"
+#include "LogViewerWidget.h"
 
 enum class AppStage {
     Home,
@@ -45,6 +46,7 @@ public:
     ~MainWindow();
 
 private:
+    LogViewerWidget* logViewer;
     ProcessManager* processManager;
         std::vector<Result> cachedResults;
     WhitelistManager* whitelistManager;

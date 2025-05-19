@@ -23,6 +23,9 @@
 #include <QSizePolicy>
 #include <QFileInfo>
 #include "LogManager.h"
+#include <QDesktopServices>
+#include <QUrl>
+#include "LogViewerWidget.h"
 
 
 // ------------------ MainWindow 생성자 ------------------
@@ -182,6 +185,10 @@ MainWindow::MainWindow(QWidget *parent)
     resultTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     resultTable->hide();
 
+    logViewer = new LogViewerWidget(this);
+    logViewer->hide();
+    mainContentLayout->addWidget(logViewer);
+
     mainLabel = new QLabel("[ 콘텐츠 영역 ]");
     mainLabel->setStyleSheet("color: gray; font-size: 14px;");
     mainContentLayout->addWidget(resultTable);
@@ -190,6 +197,8 @@ MainWindow::MainWindow(QWidget *parent)
     mainContentLayout->addStretch();
     mainContentLayout->addWidget(mainLabel);
     mainContentLayout->addStretch();
+
+
 
     // DLL 영역 생성
     setupDLLArea();
@@ -244,20 +253,37 @@ void MainWindow::handleStageClick(int index){
         break;
     case 1: // 프로세스 목록
         updateStage(AppStage::ProcessSelected);
+        logViewer->hide();
+        dllScrollArea->show();
         loadProcesses();
         break;
     case 2:
-        if(currentStage >= AppStage::ProcessSelected)
+        if(currentStage >= AppStage::ProcessSelected) {
             updateStage(AppStage::DetectionStarted);
-        else
+            logViewer->hide();
+            dllScrollArea->show();
+        }else{
             warnUser("먼저 프로세스를 선택하세요.");
+        }
         break;
     case 3:
-        if(currentStage >= AppStage::DetectionStarted)
+        if (currentStage >= AppStage::DetectionStarted) {
             updateStage(AppStage::LogSaved);
-        else
+
+            // ✅ 다른 콘텐츠 숨기기
+            mainLabel->hide();
+            resultTable->hide();
+            dllScrollArea->hide();
+            // (다른 콘텐츠 위젯이 있으면 같이 hide)
+
+            // ✅ 로그 뷰어 보여주기
+            logViewer->loadLogFile();
+            logViewer->show();
+        } else {
             warnUser("먼저 탐지를 시작하세요.");
+        }
         break;
+
     }
 }
 
@@ -404,6 +430,8 @@ void MainWindow::handleRowClicked(int row, int column) {
         dllLayout->addWidget(noDLLLabel);
     }
 }
+
+
 
 void MainWindow::onAnalysisFinished(const QString &resultJson) {
     QMessageBox::information(this, "DLL 분석 결과", resultJson);
