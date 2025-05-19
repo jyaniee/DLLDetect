@@ -176,7 +176,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // 메인 콘텐츠 ----------------------------------
     QWidget *mainContent = new QWidget();
-    QVBoxLayout *mainContentLayout = new QVBoxLayout(mainContent);
+    mainContentLayout = new QVBoxLayout(mainContent);
     mainContentLayout->setContentsMargins(20, 20, 20, 20);
 
     resultTable = new QTableWidget(this);
@@ -202,7 +202,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // DLL 영역 생성
     setupDLLArea();
-
+    setupDetectButtonArea();
 
     // 최종 조립 ----------------------------------
     contentLayout->addWidget(sidePanel);
@@ -227,7 +227,7 @@ void MainWindow::setupDLLArea() {
     // 위치 및 크기 설정
     int tableX = 100; // 테이블의 x 좌표와 동일하게 맞춤 (필요에 따라 조정)
     int tableWidth = 1160;
-    int tableHeight = 600;
+    int tableHeight = 300;
     int yPosition = 350;
 
     dllScrollArea->setGeometry(tableX, yPosition, tableWidth, tableHeight);
@@ -245,6 +245,39 @@ void MainWindow::setupDLLArea() {
 
     dllScrollArea->setWidget(dllContainer);
 }
+
+void MainWindow::setupDetectButtonArea() {
+    detectButton = new QPushButton("탐지 시작", this);
+    detectButton->setFixedSize(160, 40);
+    detectButton->setVisible(false);  // 초기엔 숨김
+
+    detectButton->setStyleSheet(R"(
+        QPushButton {
+            background-color: #3e3e5e;
+            color: white;
+            font-weight: bold;
+            border-radius: 8px;
+        }
+        QPushButton:hover {
+            background-color: #5e5e7e;
+        }
+    )");
+
+    // 클릭 시 스테이지 전환
+    connect(detectButton, &QPushButton::clicked, this, [=]() {
+        handleStageClick(2);
+    });
+
+    // 아래 여백 및 버튼 중앙 정렬
+    QWidget* buttonWrapper = new QWidget();
+    QVBoxLayout* wrapperLayout = new QVBoxLayout(buttonWrapper);
+    wrapperLayout->setContentsMargins(0, 30, 0, 10);  // 위쪽 여백 30, 아래 여백 10
+    wrapperLayout->addWidget(detectButton, 0, Qt::AlignHCenter);
+
+    mainContentLayout->addWidget(buttonWrapper);
+}
+
+
 
 void MainWindow::handleStageClick(int index){
     switch (index){
@@ -310,6 +343,11 @@ void MainWindow::updateStage(AppStage newStage){
             QString("QToolButton { border: none; %1 } QToolButton:hover { background-color: #2e2e3f; }")
                 .arg(style)
             );
+    }
+
+    // 탐지 버튼 숨기기 (다음 상태에서 필요한 경우만 다시 보여줌)
+    if (detectButton) {
+        detectButton->setVisible(false);
     }
 
     if(mainLabel){
@@ -468,6 +506,8 @@ void MainWindow::handleRowClicked(int row, int column) {
         noDLLLabel->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
         dllLayout->addWidget(noDLLLabel);
     }
+
+    detectButton->setVisible(true);
 }
 
 
