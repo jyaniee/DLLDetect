@@ -71,6 +71,7 @@ private:
     QTableWidget *processTable;
     QTableWidget *dllTable;
     QScrollArea *dllScrollArea;
+    QVBoxLayout* dllLayout;
     void setupDLLArea();
     void clearDLLArea();
     void handleStageClick(int index);

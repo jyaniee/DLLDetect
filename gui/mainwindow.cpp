@@ -446,22 +446,30 @@ void MainWindow::handleRowClicked(int row, int column) {
                 }
             });
 
+            QLabel *dllLabel = new QLabel(dllPath);
+            dllLabel->setStyleSheet(R"(
+                color: white;
+                background-color: #12131A;
+                padding: 4px;
+                text-align: left;
+                border-bottom: 1px solid #2e2e3f;
+            )");
 
-            dllLayout->addWidget(dllButton);
+            dllLayout->addWidget(dllLabel);
         }
     } else {
         QLabel *noDLLLabel = new QLabel("DLL 정보가 없습니다.");
         noDLLLabel->setStyleSheet(R"(
-        color: gray;
-        padding-top: 10px;  /* 위쪽에 약간의 패딩을 추가 */
-        text-align: center;
-    )");
+            color: gray;
+            padding-top: 10px;
+            text-align: center;
+        )");
 
         noDLLLabel->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
-
         dllLayout->addWidget(noDLLLabel);
     }
 }
+
 
 
 
