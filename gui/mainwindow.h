@@ -72,7 +72,7 @@ private:
     QTableWidget *dllTable;
     QScrollArea *dllScrollArea;
     void setupDLLArea();
-
+    void clearDLLArea();
     void handleStageClick(int index);
     void updateStage(AppStage newStage);
     void warnUser(const QString &msg);
