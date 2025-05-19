@@ -29,6 +29,7 @@
 #include <QGraphicsOpacityEffect>
 #include <QPropertyAnimation>
 #include <QTimer>
+#include <QFontDatabase>
 
 // ------------------ MainWindow 생성자 ------------------
 MainWindow::MainWindow(QWidget *parent)
@@ -48,6 +49,8 @@ MainWindow::MainWindow(QWidget *parent)
     // 기본 설정
     setWindowTitle("Filter Dashboard");
     resize(1280, 800);
+
+    QFontDatabase::addApplicationFont(":/fonts/DMSans-Bold.ttf");
 
     // 아이콘 및 스테이지 설정
     QStringList icons = {":/img/home.svg", ":/img/list.svg", ":/img/searching.svg", ":/img/pattern.svg"};
@@ -82,7 +85,7 @@ MainWindow::MainWindow(QWidget *parent)
     logoArea->setStyleSheet("background-color: #12131a;");
 
     titleLabel = new QLabel("Content Area");
-    titleLabel->setStyleSheet("color: white; font-size: 20px; font-weight: bold;");
+    titleLabel->setStyleSheet("font-family: 'DM-Sans'; color: white; font-size: 20px; font-weight: bold;");
 
     QFrame *logoSeparator = new QFrame();
     logoSeparator->setFrameShape(QFrame::VLine);
