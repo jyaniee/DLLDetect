@@ -12,7 +12,15 @@
 #include <QPushButton>
 #include <QComboBox>
 #include "ui_mainwindow.h"
-
+#include "NetworkDLLAnalyzer.h"
+#include "ProcessManager.h"
+#include "WhitelistManager.h"
+#include <QFile>
+#include <QTextStream>
+#include <QDateTime>
+#include <QStandardPaths>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include "ProcessManager.h"
 
 enum class AppStage {
@@ -39,12 +47,19 @@ public:
 private:
     ProcessManager* processManager;
         std::vector<Result> cachedResults;
+    WhitelistManager* whitelistManager;
 private slots:
     void onScanResult(const std::vector<Result>& results);
+    void onAnalysisFinished(const QString &result);  // <-- 추가
+private:
+    void saveLog(const QString& dllPath, int prediction, const QString& source);
+
 
 private:
+    QString lastAnalyzedDllPath;
 
     Ui::MainWindow *ui;
+    NetworkDLLAnalyzer *networkAnalyzer;
     QPushButton *loadButton;
 
     AppStage currentStage = AppStage::Home;

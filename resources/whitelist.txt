@@ -1,0 +1,15 @@
+kernel32.dll
+user32.dll
+ntdll.dll
+gdi32.dll
+advapi32.dll
+ole32.dll
+oleaut32.dll
+shell32.dll
+comdlg32.dll
+shlwapi.dll
+ws2_32.dll
+sechost.dll
+rpcrt4.dll
+crypt32.dll
+msvcrt.dll

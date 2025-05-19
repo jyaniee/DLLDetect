@@ -2,7 +2,7 @@
 #include "mainwindow.h"
 #include "ProcessManager.h"
 #include "Result.h"
-
+#include "NetworkDLLAnalyzer.h"
 #include <iostream>
 #include <QWidget>
 #include <QHBoxLayout>
@@ -21,6 +21,8 @@
 #include <QTableWidget>
 #include <QHeaderView>
 #include <QSizePolicy>
+#include <QFileInfo>
+#include "LogManager.h"
 
 
 // ------------------ MainWindow 생성자 ------------------
@@ -30,7 +32,16 @@ MainWindow::MainWindow(QWidget *parent)
     processManager = new ProcessManager(this);
     connect(processManager, &ProcessManager::scanFinished,
             this, &MainWindow::onScanResult);
-
+    networkAnalyzer = new NetworkDLLAnalyzer(this);
+    connect(networkAnalyzer, &NetworkDLLAnalyzer::analysisFinished,
+            this, &MainWindow::onAnalysisFinished);
+    // ✅ 화이트리스트 매니저 초기화
+    whitelistManager = new WhitelistManager();
+    if (!whitelistManager->loadWhitelist(":/whitelist.txt")) {
+        qDebug() << "[Whitelist] 로드 실패";
+    } else {
+        qDebug() << "[Whitelist] 로드 성공";
+    }
 
     // 기본 설정
     setWindowTitle("Filter Dashboard");
@@ -333,6 +344,7 @@ void MainWindow::onScanResult(const std::vector<Result>& results){
 void MainWindow::warnUser(const QString &msg){
     QMessageBox::warning(this, "안내", msg);
 }
+
 void MainWindow::handleRowClicked(int row, int column) {
     if (row < 0 || row >= static_cast<int>(cachedResults.size())) return;
 
@@ -351,18 +363,62 @@ void MainWindow::handleRowClicked(int row, int column) {
     }
 
     QLabel *title = new QLabel(QString("프로세스: %1\nPID: %2\nDLL 목록:").arg(res.processName).arg(pid));
+    title->setStyleSheet("color: white; font-weight: bold;");
     dllLayout->addWidget(title);
 
     if (!dllList.empty()) {
         for (const std::string &dll : dllList) {
-            QLabel *dllLabel = new QLabel(QString::fromStdString(dll));
-            dllLayout->addWidget(dllLabel);
+            QString dllPath = QString::fromStdString(dll);
+
+            QPushButton *dllButton = new QPushButton(dllPath);
+            dllButton->setStyleSheet(R"(
+                QPushButton {
+                    color: white;
+                    background-color: #1e1e2e;
+                    border: 1px solid #2e2e3f;
+                    padding: 4px;
+                    text-align: left;
+                }
+                QPushButton:hover {
+                    background-color: #2e2e3f;
+                }
+            )");
+
+            connect(dllButton, &QPushButton::clicked, this, [=]() {
+                QString dllName = QFileInfo(dllPath).fileName();
+                lastAnalyzedDllPath = dllPath;
+                if (whitelistManager->isWhitelisted(dllName)) {
+                    LogManager::writeLog(dllPath, 0, "whitelist", cachedResults);
+                    emit networkAnalyzer->analysisFinished("정상 DLL입니다 (화이트리스트)");
+                } else {
+                    networkAnalyzer->analyzeDLL(dllPath);
+                }
+            });
+
+
+            dllLayout->addWidget(dllButton);
         }
     } else {
         QLabel *noDLLLabel = new QLabel("DLL 정보가 없습니다.");
+        noDLLLabel->setStyleSheet("color: gray;");
         dllLayout->addWidget(noDLLLabel);
     }
 }
+
+void MainWindow::onAnalysisFinished(const QString &resultJson) {
+    QMessageBox::information(this, "DLL 분석 결과", resultJson);
+
+    QJsonDocument doc = QJsonDocument::fromJson(resultJson.toUtf8());
+    if (doc.isObject()) {
+        QJsonObject obj = doc.object();
+        if (obj.contains("prediction")) {
+            int prediction = obj["prediction"].toInt();
+            QString source = obj.value("source").toString();
+            LogManager::writeLog(lastAnalyzedDllPath, prediction, source, cachedResults);
+        }
+    }
+}
+
 
 
 
