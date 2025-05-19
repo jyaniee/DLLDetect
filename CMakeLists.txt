@@ -53,6 +53,8 @@ add_executable(DLLDetect ${SOURCES} ${MOC_SOURCES} ${HEADERS} ${UIC_SOURCES} ${r
   src/NetworkDLLAnalyzer.cpp
   include/WhitelistManager.h
   src/WhitelistManager.cpp
+  src/LogViewerWidget.cpp
+  include/LogViewerWidget.h
   )
 
 target_link_libraries(DLLDetect PRIVATE Qt6::Widgets Qt6::Svg Qt6::Core Qt6::Gui Qt6::Network psapi kernel32)
