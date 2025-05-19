@@ -72,6 +72,8 @@ private:
     QTableWidget *dllTable;
     QScrollArea *dllScrollArea;
     QVBoxLayout* dllLayout;
+    QPushButton* detectButton = nullptr;
+    QVBoxLayout* mainContentLayout = nullptr;
     void setupDLLArea();
     void clearDLLArea();
     void handleStageClick(int index);
@@ -80,6 +82,7 @@ private:
     void loadProcesses();
     void clearTable();
     void handleRowClicked(int row, int column);
+    void setupDetectButtonArea();
 
 };
 
