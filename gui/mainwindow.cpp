@@ -26,7 +26,9 @@
 #include <QDesktopServices>
 #include <QUrl>
 #include "LogViewerWidget.h"
-
+#include <QGraphicsOpacityEffect>
+#include <QPropertyAnimation>
+#include <QTimer>
 
 // ------------------ MainWindow 생성자 ------------------
 MainWindow::MainWindow(QWidget *parent)
@@ -87,7 +89,7 @@ MainWindow::MainWindow(QWidget *parent)
     logoLayout->addWidget(logo);
 
     // 상단바 타이틀
-    QLabel *titleLabel = new QLabel("Content Area");
+    titleLabel = new QLabel("Content Area");
     titleLabel->setStyleSheet("color: white; font-size: 20px; font-weight: bold;");
 
     // 로고와 텍스트 사이 구분선 추가
@@ -195,14 +197,20 @@ MainWindow::MainWindow(QWidget *parent)
     mainLabel->setAlignment(Qt::AlignCenter);
 
     mainContentLayout->addStretch();
-    mainContentLayout->addWidget(mainLabel);
-    mainContentLayout->addStretch();
+   //  mainContentLayout->addWidget(mainLabel);
+     mainContentLayout->addStretch();
 
 
 
     // DLL 영역 생성
     setupDLLArea();
     setupDetectButtonArea();
+
+    // 탐지 방식 선택 영역
+    setupDetectionMethodArea();
+
+    // 탐지 결과 영역
+    setupDetectionResultArea();
 
     // 최종 조립 ----------------------------------
     contentLayout->addWidget(sidePanel);
@@ -350,23 +358,31 @@ void MainWindow::updateStage(AppStage newStage){
         detectButton->setVisible(false);
     }
 
+    if (detectionMethodWidget) detectionMethodWidget->setVisible(false);
+
+
     if(mainLabel){
         switch(currentStage){
         case AppStage::Home:
             mainLabel->setText("홈");
+            titleLabel->setText("Home");
             clearTable();
             clearDLLArea();
             break;
         case AppStage::ProcessSelected:
             mainLabel->setText("프로세스 선택");
+            titleLabel->setText("Process");
             break;
         case AppStage::DetectionStarted:
             mainLabel->setText("DLL 탐지");
+            titleLabel->setText("Detection");
             clearTable();
             clearDLLArea();
+            if(detectionMethodWidget) detectionMethodWidget->show();
             break;
         case AppStage::LogSaved:
             mainLabel->setText("로그 저장");
+            titleLabel->setText("Log");
             break;
         }
     }
@@ -527,8 +543,185 @@ void MainWindow::onAnalysisFinished(const QString &resultJson) {
     }
 }
 
+void MainWindow::setupDetectionMethodArea() {
+    detectionMethodWidget = new QWidget(this);
+    QVBoxLayout* outerLayout = new QVBoxLayout(detectionMethodWidget);
+    outerLayout->setContentsMargins(20, 20, 20, 20);
+    outerLayout->setSpacing(16);
+
+    QLabel* title = new QLabel("탐지 방식을 선택하세요:");
+    title->setStyleSheet("color: white; font-weight: bold; font-size: 16px;");
+    outerLayout->addWidget(title);
+
+    // 버튼 레이아웃
+    QGridLayout* grid = new QGridLayout();
+    grid->setSpacing(12);
+
+    QString baseStyle = R"(
+        QPushButton {
+            background-color: #1e1e2e;
+            color: white;
+            padding: 15px;
+            font-size: 14px;
+            border: 1px solid #2e2e3f;
+            border-radius: 10px;
+        }
+        QPushButton:checked {
+            background-color: #3e3e5e;
+            border: 2px solid #7aa2f7;
+        }
+    )";
+
+    pebButton = new QPushButton("PEB 기반");
+    hookButton = new QPushButton("훅 기반");
+    entropyButton = new QPushButton("엔트로피 기반");
+    networkButton = new QPushButton("네트워크 기반");
+
+    QList<QPushButton*> buttons = {pebButton, hookButton, entropyButton, networkButton};
+    int row = 0, col = 0;
+    for (QPushButton* btn : buttons) {
+        btn->setCheckable(true);
+        btn->setStyleSheet(baseStyle);
+        btn->setMinimumWidth(180);
+        btn->setMinimumHeight(60);
+        grid->addWidget(btn, row, col);
+
+        connect(btn, &QPushButton::clicked, this, [=]() {
+            // 다른 버튼들 전부 체크 해제
+            for (QPushButton* other : buttons) {
+                if (other != btn) other->setChecked(false);
+            }
+            selectedDetectionButton = btn;  // 현재 선택된 버튼 저장
+        });
+
+        col++;
+        if (col == 2) { row++; col = 0; }
+    }
+
+    outerLayout->addLayout(grid);
+
+    // 실행 버튼
+    QPushButton* runBtn = new QPushButton("탐지 실행");
+    runBtn->setStyleSheet(R"(
+        QPushButton {
+            background-color: #7aa2f7;
+            color: white;
+            font-weight: bold;
+            padding: 10px 20px;
+            border-radius: 6px;
+        }
+        QPushButton:hover {
+            background-color: #5e7ddc;
+        }
+    )");
+    runBtn->setFixedSize(120, 40);
+
+    connect(runBtn, &QPushButton::clicked, this, [=]() {
+        if (!selectedDetectionButton) {
+            QMessageBox::warning(this, "선택 필요", "탐지 방식을 선택해주세요.");
+            return;
+        }
+        QString method = selectedDetectionButton->text();
+        startDetectionWithMethod(method);
+    });
+
+    outerLayout->addWidget(runBtn, 0, Qt::AlignRight);
+
+    detectionMethodWidget->hide();  // 초기엔 숨김
+    mainContentLayout->insertWidget(0, detectionMethodWidget);  // 상단에 추가
+}
 
 
+// 현재는 예시로 탐지 방식을 작성해둔거에용
+void MainWindow::startDetectionWithMethod(const QString& method) {
+    qDebug() << "선택된 탐지 방식:" << method;
+
+    // 1. 탐지 결과 UI 초기화 및 로딩 메시지
+    if (detectionResultWidget) {
+        detectionResultWidget->show();
+        dllResultTable->hide();
+
+        resultStatusLabel->setStyleSheet("color: white; font-size: 14px;");
+        resultStatusLabel->setText("🔍 탐지 중...");
+    }
+
+    // 2. 페이크 딜레이 또는 실제 탐지 작업 호출 (예시: 1.5초 후 수행)
+    QTimer::singleShot(1500, this, [=]() {
+        if (method == "PEB 기반") {
+            qDebug() << "PEB 탐지 수행";
+            // 실제 결과 예시
+            showCleanResult();
+        } else if (method == "훅 기반") {
+            qDebug() << "훅 기반 탐지 수행";
+            showSuspiciousDLLs({{"bad_hook.dll", "C:/hook/bad_hook.dll"}});
+        } else if (method == "엔트로피 기반") {
+            qDebug() << "엔트로피 분석 수행";
+            showSuspiciousDLLs({{"weird_entropy.dll", "C:/suspicious/weird_entropy.dll"}});
+        } else if (method == "네트워크 기반") {
+            qDebug() << "네트워크 탐지 수행";
+            showCleanResult();
+        } else {
+            qDebug() << "알 수 없는 탐지 방식:" << method;
+            resultStatusLabel->setText("⚠️ 알 수 없는 탐지 방식입니다.");
+        }
+    });
+}
+
+
+void MainWindow::setupDetectionResultArea() {
+    detectionResultWidget = new QWidget(this);
+    QVBoxLayout* layout = new QVBoxLayout(detectionResultWidget);
+    layout->setContentsMargins(10, 10, 10, 10);
+    layout->setSpacing(12);
+    resultStatusLabel = new QLabel("탐지 결과가 여기에 표시됩니다.");
+    resultStatusLabel->setStyleSheet("color: gray; font-size: 14px;");
+    resultStatusLabel->setAlignment(Qt::AlignCenter);
+
+    dllResultTable = new QTableWidget();
+    dllResultTable->setColumnCount(2);
+    dllResultTable->setHorizontalHeaderLabels(QStringList() << "DLL 이름" << "경로");
+    dllResultTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    dllResultTable->hide();  // 처음엔 숨김
+
+    layout->addWidget(resultStatusLabel);
+    layout->addWidget(dllResultTable);
+
+    detectionResultWidget->hide();
+    mainContentLayout->addWidget(detectionResultWidget);
+}
+
+void MainWindow::showCleanResult() {
+    dllResultTable->hide();
+    resultStatusLabel->setText("✅ 의심되는 DLL이 없습니다!");
+    resultStatusLabel->setStyleSheet(R"(
+        QLabel {
+            color: lightgreen;
+            font-weight: bold;
+            font-size: 16px;
+        }
+    )");
+
+    // 페이드인 애니메이션
+    QGraphicsOpacityEffect* effect = new QGraphicsOpacityEffect(resultStatusLabel);
+    resultStatusLabel->setGraphicsEffect(effect);
+
+    QPropertyAnimation* animation = new QPropertyAnimation(effect, "opacity");
+    animation->setDuration(700);
+    animation->setStartValue(0.0);
+    animation->setEndValue(1.0);
+    animation->start(QAbstractAnimation::DeleteWhenStopped);
+}
+
+void MainWindow::showSuspiciousDLLs(const std::vector<std::pair<QString, QString>>& dlls) {
+    dllResultTable->setRowCount(static_cast<int>(dlls.size()));
+    for (int i = 0; i < dlls.size(); ++i) {
+        dllResultTable->setItem(i, 0, new QTableWidgetItem(dlls[i].first));
+        dllResultTable->setItem(i, 1, new QTableWidgetItem(dlls[i].second));
+    }
+    resultStatusLabel->setText("❗ 의심되는 DLL이 발견되었습니다.");
+    resultStatusLabel->setStyleSheet("color: orange; font-size: 14px;");
+    dllResultTable->show();
+}
 
 //    const Result &res = cachedResults[row];
 //    QString message = QString("PID: %1\n프로세스명: %2\n\nDLL 목록:\n").arg(res.pid).arg(res.processName);
