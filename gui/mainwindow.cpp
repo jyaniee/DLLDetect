@@ -422,17 +422,17 @@ void MainWindow::handleRowClicked(int row, int column) {
 
             QPushButton *dllButton = new QPushButton(dllPath);
             dllButton->setStyleSheet(R"(
-    QPushButton {
-        color: white;
-        background-color: #12131A;  /* 배경색과 동일하게 */
-        border: 1px solid #2e2e3f;   /* 테두리 색상 */
-        padding: 4px;
-        text-align: left;
-    }
-    QPushButton:hover {
-        background-color: #2e2e3f;  /* Hover 시 배경색 */
-    }
-)");
+                QPushButton {
+                    color: white;
+                    background-color: #12131A;  /* 배경색과 동일하게 */
+                    border: 1px solid #2e2e3f;   /* 테두리 색상 */
+                    padding: 4px;
+                    text-align: left;
+                }
+                QPushButton:hover {
+                    background-color: #2e2e3f;  /* Hover 시 배경색 */
+                }
+            )");
 
 
             connect(dllButton, &QPushButton::clicked, this, [=]() {
