@@ -16,7 +16,7 @@ void HashComparator::loadHashList(const QString& filePath) {
         while (!in.atEnd()) {
             QString line = in.readLine().trimmed();
             if (!line.isEmpty()) {
-                knownHashes.insert(line);
+                knownHashes.insert(line.toLower());
             }
         }
         file.close();

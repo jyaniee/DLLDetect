@@ -45,7 +45,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     whitelistManager = new WhitelistManager();
     whitelistManager->loadWhitelist(":/whitelist.txt");
-
+    hashComparator.loadHashList(":/known_hashes.txt");
     // 기본 설정
     setWindowTitle("Filter Dashboard");
     resize(1280, 800);
@@ -424,13 +424,20 @@ void MainWindow::warnUser(const QString &msg){
 
 void MainWindow::handleRowClicked(int row, int column) {
     if (row < 0 || row >= static_cast<int>(cachedResults.size())) return;
-
+    lastSelectedRow = row;
+    resultTable->selectRow(row);
     const Result &res = cachedResults[row];
     int pid = res.pid;
 
     DLLAnalyzer dllAnalyzer;
-    std::vector<std::string> dllList = dllAnalyzer.GetLoadedModules(pid);
+    std::vector<std::string> dllListRaw  = dllAnalyzer.GetLoadedModules(pid);
 
+    QStringList dllListQt;
+    for (const std::string &s : dllListRaw) {
+        dllListQt.append(QString::fromStdString(s));
+    }
+    // ✅ 🔴 cachedResults[row].dllList를 갱신!
+    cachedResults[row].dllList = dllListQt;
     // DLL 정보 컨테이너 초기화
     QVBoxLayout *dllLayout = qobject_cast<QVBoxLayout*>(dllScrollArea->widget()->layout());
     QLayoutItem *child;
@@ -443,8 +450,8 @@ void MainWindow::handleRowClicked(int row, int column) {
     title->setStyleSheet("color: white; font-weight: bold;");
     dllLayout->addWidget(title);
 
-    if (!dllList.empty()) {
-        for (const std::string &dll : dllList) {
+    if (!dllListRaw.empty()) {
+        for (const std::string &dll : dllListRaw ) {
             QString dllPath = QString::fromStdString(dll);
 
             QPushButton *dllButton = new QPushButton(dllPath);
@@ -546,7 +553,7 @@ void MainWindow::setupDetectionMethodArea(QVBoxLayout* layout) {
         }
     )";
 
-    pebButton = new QPushButton("PEB 기반");
+    pebButton = new QPushButton("해시 기반");
     hookButton = new QPushButton("훅 기반");
     entropyButton = new QPushButton("엔트로피 기반");
     networkButton = new QPushButton("네트워크 기반");
@@ -605,36 +612,78 @@ void MainWindow::setupDetectionMethodArea(QVBoxLayout* layout) {
 void MainWindow::startDetectionWithMethod(const QString& method) {
     qDebug() << "선택된 탐지 방식:" << method;
 
-    // 1. 탐지 결과 UI 초기화 및 로딩 메시지
+    // 🔴 탐지 결과 UI 초기화
     if (detectionResultWidget) {
         detectionResultWidget->show();
         dllResultTable->hide();
-
         resultStatusLabel->setStyleSheet("color: white; font-size: 14px;");
         resultStatusLabel->setText("🔍 탐지 중...");
     }
 
-    // 2. 페이크 딜레이 또는 실제 탐지 작업 호출 (예시: 1.5초 후 수행)
+    // 🔴 1.5초 후 실제 탐지 수행
     QTimer::singleShot(1500, this, [=]() {
-        if (method == "PEB 기반") {
-            qDebug() << "PEB 탐지 수행";
-            // 실제 결과 예시
-            showCleanResult();
+        if (method == "해시 기반") {
+            qDebug() << "해시 기반 탐지 수행";
+
+            // 🔴 현재 선택된 프로세스 행 가져오기
+           int row = lastSelectedRow;
+            qDebug() << "현재 선택된 row:" << row;
+
+            if (row < 0 || row >= static_cast<int>(cachedResults.size())) {
+                qDebug() << "선택된 프로세스가 없습니다. 탐지 종료.";
+                return;
+            }
+
+            // 🔴 선택된 프로세스의 DLL 목록
+            const Result &res = cachedResults[row];
+            QStringList dllList = res.dllList;
+            qDebug() << "탐지 시작 시 DLL 개수:" << dllList.size();
+
+            // 🔴 known_hashes에 있는 해시 개수 로그
+            qDebug() << "known_hashes 개수:" << hashComparator.getKnownHashCount();
+
+            // 🔴 의심 DLL 담을 컨테이너
+            std::vector<std::pair<QString, QString>> suspiciousDLLs;
+
+            for (const QString &dllPath : dllList) {
+                // 🔴 각 DLL의 해시 계산
+                QString hash = hashComparator.calculateHash(dllPath);
+                qDebug() << "DLL 경로:" << dllPath << "해시:" << hash;
+
+                // 🔴 해시 비교
+                bool isKnown = hashComparator.isKnown(dllPath);
+                qDebug() << "isKnown 결과:" << isKnown;
+
+                if (isKnown) {
+                    QString dllName = QFileInfo(dllPath).fileName();
+                    suspiciousDLLs.emplace_back(dllName, dllPath);
+                    qDebug() << "의심 DLL 추가됨:" << dllName;
+                }
+            }
+
+            qDebug() << "의심 DLL 개수:" << suspiciousDLLs.size();
+
+            // 🔴 탐지 결과 UI로 출력
+            if (suspiciousDLLs.empty()) {
+                showCleanResult();
+            } else {
+                showSuspiciousDLLs(suspiciousDLLs);
+            }
         } else if (method == "훅 기반") {
-            qDebug() << "훅 기반 탐지 수행";
+            qDebug() << "훅 기반 탐지 수행 (예제용)";
             showSuspiciousDLLs({{"bad_hook.dll", "C:/hook/bad_hook.dll"}});
         } else if (method == "엔트로피 기반") {
-            qDebug() << "엔트로피 분석 수행";
+            qDebug() << "엔트로피 분석 수행 (예제용)";
             showSuspiciousDLLs({{"weird_entropy.dll", "C:/suspicious/weird_entropy.dll"}});
         } else if (method == "네트워크 기반") {
-            qDebug() << "네트워크 탐지 수행";
+            qDebug() << "네트워크 탐지 수행 (예제용)";
             showCleanResult();
         } else {
-            qDebug() << "알 수 없는 탐지 방식:" << method;
+            qDebug() << "⚠️ 알 수 없는 탐지 방식:" << method;
             resultStatusLabel->setText("⚠️ 알 수 없는 탐지 방식입니다.");
         }
-    });
-}
+    });  // QTimer::singleShot 닫힘
+}  // startDetectionWithMethod 닫힘
 
 
 void MainWindow::setupDetectionResultArea(QVBoxLayout* layout) {

@@ -23,6 +23,7 @@
 #include <QJsonObject>
 #include "ProcessManager.h"
 #include "LogViewerWidget.h"
+#include "HashComparator.h"
 
 enum class AppStage {
     Home,
@@ -46,10 +47,12 @@ public:
     ~MainWindow();
 
 private:
+    HashComparator hashComparator;
     LogViewerWidget* logViewer;
     ProcessManager* processManager;
-        std::vector<Result> cachedResults;
+    std::vector<Result> cachedResults;
     WhitelistManager* whitelistManager;
+    int lastSelectedRow = -1;
 private slots:
     void onScanResult(const std::vector<Result>& results);
     void onAnalysisFinished(const QString &result);  // <-- 추가
