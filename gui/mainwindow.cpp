@@ -3,6 +3,7 @@
 #include "ProcessManager.h"
 #include "Result.h"
 #include "NetworkDLLAnalyzer.h"
+#include "CodeSignatureAnalyzer.h"
 #include <iostream>
 #include <QWidget>
 #include <QHBoxLayout>
@@ -247,6 +248,7 @@ void MainWindow::setupDetectButtonArea(QVBoxLayout* layout) {
         }
     )");
 
+
     connect(detectButton, &QPushButton::clicked, this, [=]() {
         handleStageClick(2);
     });
@@ -255,7 +257,6 @@ void MainWindow::setupDetectButtonArea(QVBoxLayout* layout) {
     QVBoxLayout* wrapperLayout = new QVBoxLayout(buttonWrapper);
     wrapperLayout->setContentsMargins(0, 30, 0, 10);
     wrapperLayout->addWidget(detectButton, 0, Qt::AlignHCenter);
-
     layout->addWidget(buttonWrapper);
 }
 
@@ -304,7 +305,22 @@ void MainWindow::handleStageClick(int index){
 
     }
 }
+void MainWindow::startCodeSignatureDetection() {
+    CodeSignatureAnalyzer analyzer;
+    std::vector<std::pair<QString, QString>> suspicious;
 
+    for (QString& dll : currentDllList) {
+        if (analyzer.isSuspicious(dll)) {
+            suspicious.emplace_back(QFileInfo(dll).fileName(), dll);
+        }
+    }
+
+    if (suspicious.empty()) {
+        showCleanResult();
+    } else {
+        showSuspiciousDLLs(suspicious);
+    }
+}
 void MainWindow::updateStage(AppStage newStage){
     currentStage = newStage;
 
@@ -422,59 +438,58 @@ void MainWindow::warnUser(const QString &msg){
     QMessageBox::warning(this, "안내", msg);
 }
 
-void MainWindow::handleRowClicked(int row, int column) {
-    if (row < 0 || row >= static_cast<int>(cachedResults.size())) return;
+    void MainWindow::handleRowClicked(int row, int column) {
+        if (row < 0 || row >= static_cast<int>(cachedResults.size())) return;
 
-    const Result &res = cachedResults[row];
-    int pid = res.pid;
+        const Result &res = cachedResults[row];
+        int pid = res.pid;
 
-    DLLAnalyzer dllAnalyzer;
-    std::vector<std::string> dllList = dllAnalyzer.GetLoadedModules(pid);
+        DLLAnalyzer dllAnalyzer;
+        std::vector<std::string> dllList = dllAnalyzer.GetLoadedModules(pid);
 
-    // DLL 정보 컨테이너 초기화
-    QVBoxLayout *dllLayout = qobject_cast<QVBoxLayout*>(dllScrollArea->widget()->layout());
-    QLayoutItem *child;
-    while ((child = dllLayout->takeAt(0)) != nullptr) {
-        delete child->widget();
-        delete child;
-    }
+        // DLL 정보 컨테이너 초기화
+        QVBoxLayout *dllLayout = qobject_cast<QVBoxLayout*>(dllScrollArea->widget()->layout());
+        QLayoutItem *child;
+        while ((child = dllLayout->takeAt(0)) != nullptr) {
+            delete child->widget();
+            delete child;
+        }
 
-    QLabel *title = new QLabel(QString("프로세스: %1\nPID: %2\nDLL 목록:").arg(res.processName).arg(pid));
-    title->setStyleSheet("color: white; font-weight: bold;");
-    dllLayout->addWidget(title);
+        QLabel *title = new QLabel(QString("프로세스: %1\nPID: %2\nDLL 목록:").arg(res.processName).arg(pid));
+        title->setStyleSheet("color: white; font-weight: bold;");
+        dllLayout->addWidget(title);
 
-    if (!dllList.empty()) {
-        for (const std::string &dll : dllList) {
-            QString dllPath = QString::fromStdString(dll);
+        if (!dllList.empty()) {
+            for (const std::string &dll : dllList) {
+                QString dllPath = QString::fromStdString(dll);
 
-            QPushButton *dllButton = new QPushButton(dllPath);
-            dllButton->setStyleSheet(R"(
+                QPushButton *dllButton = new QPushButton(dllPath);
+                dllButton->setStyleSheet(R"(
                 QPushButton {
                     color: white;
-                    background-color: #12131A;  /* 배경색과 동일하게 */
-                    border: 1px solid #2e2e3f;   /* 테두리 색상 */
+                    background-color: #12131A;
+                    border: 1px solid #2e2e3f;
                     padding: 4px;
                     text-align: left;
                 }
                 QPushButton:hover {
-                    background-color: #2e2e3f;  /* Hover 시 배경색 */
+                    background-color: #2e2e3f;
                 }
             )");
 
+                connect(dllButton, &QPushButton::clicked, this, [=]() {
+                    QString dllName = QFileInfo(dllPath).fileName();
+                    lastAnalyzedDllPath = dllPath;
+                    if (whitelistManager->isWhitelisted(dllName)) {
+                        LogManager::writeLog(dllPath, 0, "whitelist", cachedResults);
+                        emit networkAnalyzer->analysisFinished("정상 DLL입니다 (화이트리스트)");
+                    } else {
+                        networkAnalyzer->analyzeDLL(dllPath);
+                    }
+                });
 
-            connect(dllButton, &QPushButton::clicked, this, [=]() {
-                QString dllName = QFileInfo(dllPath).fileName();
-                lastAnalyzedDllPath = dllPath;
-                if (whitelistManager->isWhitelisted(dllName)) {
-                    LogManager::writeLog(dllPath, 0, "whitelist", cachedResults);
-                    emit networkAnalyzer->analysisFinished("정상 DLL입니다 (화이트리스트)");
-                } else {
-                    networkAnalyzer->analyzeDLL(dllPath);
-                }
-            });
-
-            QLabel *dllLabel = new QLabel(dllPath);
-            dllLabel->setStyleSheet(R"(
+                QLabel *dllLabel = new QLabel(dllPath);
+                dllLabel->setStyleSheet(R"(
                 color: white;
                 background-color: #12131A;
                 padding: 4px;
@@ -482,22 +497,27 @@ void MainWindow::handleRowClicked(int row, int column) {
                 border-bottom: 1px solid #2e2e3f;
             )");
 
-            dllLayout->addWidget(dllLabel);
-        }
-    } else {
-        QLabel *noDLLLabel = new QLabel("DLL 정보가 없습니다.");
-        noDLLLabel->setStyleSheet(R"(
+                dllLayout->addWidget(dllLabel);
+            }
+        } else {
+            QLabel *noDLLLabel = new QLabel("DLL 정보가 없습니다.");
+            noDLLLabel->setStyleSheet(R"(
             color: gray;
             padding-top: 10px;
             text-align: center;
         )");
 
-        noDLLLabel->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
-        dllLayout->addWidget(noDLLLabel);
-    }
+            noDLLLabel->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
+            dllLayout->addWidget(noDLLLabel);
+        }
 
-    detectButton->setVisible(true);
-}
+        detectButton->setVisible(true);
+
+        // ✅ 수동으로 테스트 DLL 삽입
+ //       currentDllList.clear();
+//        currentDllList.append("C:/Users/jeong/source/repos/UnsignedTestDLL/x64/Debug/UnsignedTestDLL.dll");
+
+    }
 
 
 
@@ -549,7 +569,7 @@ void MainWindow::setupDetectionMethodArea(QVBoxLayout* layout) {
     pebButton = new QPushButton("PEB 기반");
     hookButton = new QPushButton("훅 기반");
     entropyButton = new QPushButton("엔트로피 기반");
-    networkButton = new QPushButton("네트워크 기반");
+    networkButton = new QPushButton("코드 서명 검증");
 
     QList<QPushButton*> buttons = {pebButton, hookButton, entropyButton, networkButton};
     int row = 0, col = 0;
@@ -626,9 +646,9 @@ void MainWindow::startDetectionWithMethod(const QString& method) {
         } else if (method == "엔트로피 기반") {
             qDebug() << "엔트로피 분석 수행";
             showSuspiciousDLLs({{"weird_entropy.dll", "C:/suspicious/weird_entropy.dll"}});
-        } else if (method == "네트워크 기반") {
-            qDebug() << "네트워크 탐지 수행";
-            showCleanResult();
+        } else if (method == "코드 서명 검증") {
+            qDebug() << "코드 서명 검증 수행";
+            startCodeSignatureDetection();
         } else {
             qDebug() << "알 수 없는 탐지 방식:" << method;
             resultStatusLabel->setText("⚠️ 알 수 없는 탐지 방식입니다.");
