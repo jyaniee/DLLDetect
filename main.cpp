@@ -6,12 +6,14 @@
 #include <QPixmap>
 #include <QSvgRenderer>
 #include <QDirIterator>
+#include <QFont>
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     MainWindow w;
     w.show();
+
     QPixmap pix(":/img/home.svg");
     if (pix.isNull()) {
         qDebug() << "[ERROR] QPixmap으로 로드 실패!";
