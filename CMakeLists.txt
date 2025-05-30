@@ -57,9 +57,15 @@ add_executable(DLLDetect ${SOURCES} ${MOC_SOURCES} ${HEADERS} ${UIC_SOURCES} ${r
   include/LogViewerWidget.h
   include/HashComparator.h
   src/HashComparator.cpp
+
+
+  include/CodeSignatureAnalyzer.h
+  src/CodeSignatureAnalyzer.cpp
+
+
   )
 
-target_link_libraries(DLLDetect PRIVATE Qt6::Widgets Qt6::Svg Qt6::Core Qt6::Gui Qt6::Network psapi kernel32)
+target_link_libraries(DLLDetect PRIVATE Qt6::Widgets Qt6::Svg Qt6::Core Qt6::Gui Qt6::Network psapi kernel32 wintrust crypt32)
 target_include_directories(DLLDetect PRIVATE include)
 target_link_libraries(DLLDetect PRIVATE Qt6::Widgets Qt6::Core Qt6::Gui)
 
