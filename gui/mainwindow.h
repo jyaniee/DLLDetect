@@ -87,7 +87,7 @@ private:
     QWidget* detectionResultWidget = nullptr;
     QLabel* resultStatusLabel = nullptr;
     QTableWidget* dllResultTable = nullptr;
-
+    QStringList currentDllList;
     void setupDLLArea();
     void clearDLLArea();
     void handleStageClick(int index);
@@ -102,6 +102,11 @@ private:
     void setupDetectionResultArea(QVBoxLayout* layout);
     void showCleanResult();
     void showSuspiciousDLLs(const std::vector<std::pair<QString, QString>>& dlls);
+    void startCodeSignatureDetection();
+
+    QPushButton* signatureButton = nullptr;
+
+
 };
 
 
