@@ -447,6 +447,7 @@ void MainWindow::handleRowClicked(int row, int column) {
 
     DLLAnalyzer dllAnalyzer;
     std::vector<std::string> dllListRaw  = dllAnalyzer.GetLoadedModules(pid);
+    std::vector<std::string> dllList = dllAnalyzer.GetLoadedModules(pid);
 
     QStringList dllListQt;
     for (const std::string &s : dllListRaw) {
@@ -522,8 +523,8 @@ void MainWindow::handleRowClicked(int row, int column) {
         detectButton->setVisible(true);
 
         // ✅ 수동으로 테스트 DLL 삽입
- //       currentDllList.clear();
-//        currentDllList.append("C:/Users/jeong/source/repos/UnsignedTestDLL/x64/Debug/UnsignedTestDLL.dll");
+    //   currentDllList.clear();
+  //     currentDllList.append("C:/Users/jeong/source/repos/UnsignedTestDLL/x64/Debug/UnsignedTestDLL.dll");
 
     }
 
