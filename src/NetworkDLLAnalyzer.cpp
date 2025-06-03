@@ -3,6 +3,8 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QUrl>
+#include <QJsonArray>
+
 
 NetworkDLLAnalyzer::NetworkDLLAnalyzer(QObject *parent)
     : QObject(parent), networkManager(new QNetworkAccessManager(this))
@@ -10,6 +12,21 @@ NetworkDLLAnalyzer::NetworkDLLAnalyzer(QObject *parent)
     connect(networkManager, &QNetworkAccessManager::finished,
             this, &NetworkDLLAnalyzer::onReplyFinished);
 }
+void NetworkDLLAnalyzer::analyzeDLLs(const QStringList &dllList)
+{
+    QUrl url("http://127.0.0.1:5000/bulk_predict");
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QJsonObject json;
+    json["dll_list"] = QJsonArray::fromStringList(dllList);
+
+    QJsonDocument doc(json);
+    QByteArray data = doc.toJson();
+
+    networkManager->post(request, data);
+}
+
 
 void NetworkDLLAnalyzer::analyzeDLL(const QString &dllPath)
 {

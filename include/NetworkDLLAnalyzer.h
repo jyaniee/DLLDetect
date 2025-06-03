@@ -13,6 +13,8 @@ class NetworkDLLAnalyzer : public QObject
 public:
     explicit NetworkDLLAnalyzer(QObject *parent = nullptr);
     void analyzeDLL(const QString &dllPath);
+    void analyzeDLLs(const QStringList &dllList);
+
 
 signals:
     void analysisFinished(const QString &result);
