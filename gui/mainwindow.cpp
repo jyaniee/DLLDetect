@@ -31,6 +31,7 @@
 #include <QPropertyAnimation>
 #include <QTimer>
 #include <QFontDatabase>
+#include <QJsonArray>
 
 // ------------------ MainWindow 생성자 ------------------
 MainWindow::MainWindow(QWidget *parent)
@@ -531,19 +532,29 @@ void MainWindow::handleRowClicked(int row, int column) {
 
 
 
-void MainWindow::onAnalysisFinished(const QString &resultJson) {
-    QMessageBox::information(this, "DLL 분석 결과", resultJson);
+    void MainWindow::onAnalysisFinished(const QString &resultJson) {
+        QJsonDocument doc = QJsonDocument::fromJson(resultJson.toUtf8());
+        if (doc.isObject()) {
+            QJsonObject obj = doc.object();
+            QJsonArray resultsArray = obj["results"].toArray();
 
-    QJsonDocument doc = QJsonDocument::fromJson(resultJson.toUtf8());
-    if (doc.isObject()) {
-        QJsonObject obj = doc.object();
-        if (obj.contains("prediction")) {
-            int prediction = obj["prediction"].toInt();
-            QString source = obj.value("source").toString();
-            LogManager::writeLog(lastAnalyzedDllPath, prediction, source, cachedResults);
+            std::vector<std::pair<QString, QString>> suspiciousDLLs;
+            for (const QJsonValue &val : resultsArray) {
+                QJsonObject dllObj = val.toObject();
+                int prediction = dllObj["prediction"].toInt();
+                if (prediction == 1) {
+                    QString dllPath = dllObj["dll_path"].toString();
+                    suspiciousDLLs.emplace_back(QFileInfo(dllPath).fileName(), dllPath);
+                }
+            }
+
+            if (suspiciousDLLs.empty()) {
+                showCleanResult();
+            } else {
+                showSuspiciousDLLs(suspiciousDLLs);
+            }
         }
     }
-}
 
 void MainWindow::setupDetectionMethodArea(QVBoxLayout* layout) {
     qDebug() << "[체크] setupDetectionMethodArea() 진입됨";
@@ -577,7 +588,7 @@ void MainWindow::setupDetectionMethodArea(QVBoxLayout* layout) {
 
     pebButton = new QPushButton("해시 기반");
     hookButton = new QPushButton("훅 기반");
-    entropyButton = new QPushButton("엔트로피 기반");
+    entropyButton = new QPushButton("머신러닝 기반");
     networkButton = new QPushButton("코드 서명 검증");
 
     QList<QPushButton*> buttons = {pebButton, hookButton, entropyButton, networkButton};
@@ -655,9 +666,10 @@ void MainWindow::startDetectionWithMethod(const QString& method) {
         } else if (method == "훅 기반") {
             qDebug() << "훅 기반 탐지 수행 (예제용)";
             showSuspiciousDLLs({{"bad_hook.dll", "C:/hook/bad_hook.dll"}});
-        } else if (method == "엔트로피 기반") {
-            qDebug() << "엔트로피 분석 수행 (예제용)";
-            showSuspiciousDLLs({{"weird_entropy.dll", "C:/suspicious/weird_entropy.dll"}});
+        } else if (method == "머신러닝 기반") {
+            qDebug() << "머신러닝 탐지 수행";
+            const Result &res = cachedResults[lastSelectedRow];
+            networkAnalyzer->analyzeDLLs(res.dllList);
 
         } else if (method == "코드 서명 검증") {
             qDebug() << "코드 서명 검증 수행";
