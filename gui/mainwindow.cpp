@@ -315,12 +315,17 @@ void MainWindow::startCodeSignatureDetection() {
             suspicious.emplace_back(QFileInfo(dll).fileName(), dll);
         }
     }
-
+    QSet<QString> suspiciousSet;
+    for (const auto& pair : suspicious)
+        suspiciousSet.insert(pair.second);
+    LogManager::writeBulkLog(currentDllList, suspiciousSet, cachedResults, "signature", "signature");
     if (suspicious.empty()) {
         showCleanResult();
     } else {
         showSuspiciousDLLs(suspicious);
     }
+    // ✅ 여기에 임시 강제 로그 저장
+    LogManager::writeLog("C:/Windows/System32/kernel32.dll", 0, "signature", cachedResults, "signature");
 }
 void MainWindow::updateStage(AppStage newStage){
     currentStage = newStage;
@@ -491,7 +496,7 @@ void MainWindow::handleRowClicked(int row, int column) {
                     QString dllName = QFileInfo(dllPath).fileName();
                     lastAnalyzedDllPath = dllPath;
                     if (whitelistManager->isWhitelisted(dllName)) {
-                        LogManager::writeLog(dllPath, 0, "whitelist", cachedResults);
+                        LogManager::writeLog(dllPath, 0, "whitelist", cachedResults, "whitelist");
                         emit networkAnalyzer->analysisFinished("정상 DLL입니다 (화이트리스트)");
                     } else {
                         networkAnalyzer->analyzeDLL(dllPath);
@@ -542,6 +547,8 @@ void MainWindow::handleRowClicked(int row, int column) {
             for (const QJsonValue &val : resultsArray) {
                 QJsonObject dllObj = val.toObject();
                 int prediction = dllObj["prediction"].toInt();
+                QString dllPath = dllObj["dll_path"].toString();
+                LogManager::writeLog(dllPath, prediction, "ml", cachedResults, "ml");
                 if (prediction == 1) {
                     QString dllPath = dllObj["dll_path"].toString();
                     suspiciousDLLs.emplace_back(QFileInfo(dllPath).fileName(), dllPath);
@@ -658,6 +665,12 @@ void MainWindow::startDetectionWithMethod(const QString& method) {
         if (method == "해시 기반") {
             const Result &res = cachedResults[lastSelectedRow];
             auto suspiciousDLLs = hashComparator.detectSuspiciousDLLs(res.dllList);
+            QSet<QString> suspiciousSet;
+            for (const auto& pair : suspiciousDLLs)
+                suspiciousSet.insert(pair.second);
+
+            // ✅ 로그 저장
+            LogManager::writeBulkLog(res.dllList, suspiciousSet, cachedResults, "hash", "hash");
             if (suspiciousDLLs.empty()) {
                 showCleanResult();
             } else {
