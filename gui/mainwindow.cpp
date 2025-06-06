@@ -291,7 +291,7 @@ void MainWindow::handleStageClick(int index){
             updateStage(AppStage::LogSaved);
 
             // ✅ 다른 콘텐츠 숨기기
-            mainLabel->hide();
+            //mainLabel->hide();
             resultTable->hide();
             dllScrollArea->hide();
             // (다른 콘텐츠 위젯이 있으면 같이 hide)
@@ -299,13 +299,13 @@ void MainWindow::handleStageClick(int index){
             // ✅ 로그 뷰어 보여주기
             logViewer->loadLogFile();
             logViewer->show();
-        } else {
-            warnUser("먼저 탐지를 시작하세요.");
-        }
-        break;
+            break;
 
+        }
     }
 }
+
+
 void MainWindow::startCodeSignatureDetection() {
     CodeSignatureAnalyzer analyzer;
     std::vector<std::pair<QString, QString>> suspicious;
