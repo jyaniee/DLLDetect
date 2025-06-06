@@ -9,19 +9,17 @@
 
 class LogManager {
 public:
-    // 단일 DLL 로그 저장
-    static void writeLog(const QString& dllPath,
-                         int prediction,
-                         const QString& source,
-                         const std::vector<Result>& cachedResults,
-                         const QString& methodName);
+    static void writeLog(const QString& dllPath, int prediction, const QString& source,
+                         const std::vector<Result>& cachedResults, const QString& methodName, const QString& pid);
 
-    // 전체 DLL 결과 일괄 저장
-    static void writeBulkLog(const QStringList& dllList,
-                             const QSet<QString>& suspiciousSet,
-                             const std::vector<Result>& cachedResults,
-                             const QString& methodName,
-                             const QString& sourceTag);
+    static void writeBulkLog(const QStringList& dllList, const QSet<QString>& suspiciousSet,
+                             const std::vector<Result>& cachedResults, const QString& methodName,
+                             const QString& sourceTag, const QString& targetPid);
+
+private:
+    static QString generateLogFilePath(const QString& pid, const QString& processName, const QString& methodName);
+    static QString formatLogLine(const QString& timestamp, const QString& pid, const QString& dllPath, const QString& resultMsg);
 };
+
 
 #endif // LOGMANAGER_H

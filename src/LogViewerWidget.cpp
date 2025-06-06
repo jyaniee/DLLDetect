@@ -3,90 +3,65 @@
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QStandardPaths>
+#include <QDir>
 #include <QFile>
 #include <QTextStream>
 #include <QMessageBox>
-#include <QDebug>
+#include <QComboBox>
+#include <QLabel>
 
 LogViewerWidget::LogViewerWidget(QWidget *parent)
-    : QWidget(parent), table(new QTableWidget(this)) {
-
+    : QWidget(parent), table(new QTableWidget(this)), logComboBox(new QComboBox(this)) {
 
     QVBoxLayout* layout = new QVBoxLayout(this);
-    layout->setContentsMargins(0, 0, 0, 0);
-    layout->setSpacing(5);
-    // 버튼 영역
-    QWidget* buttonArea = new QWidget(this);
-    QHBoxLayout* buttonLayout = new QHBoxLayout(buttonArea);
-    buttonLayout->setSpacing(10);
-    buttonLayout->setContentsMargins(0, 0, 0, 0);
+    layout->setContentsMargins(10, 10, 10, 10);
+    layout->setSpacing(10);
 
-    whitelistBtn = new QPushButton("화이트리스트 로그");
-    mlBtn = new QPushButton("머신러닝 로그");
-    hashBtn = new QPushButton("해시 로그");
-    signatureBtn = new QPushButton("서명검증 로그");
+    // 콤보박스 상단 설명
+    QLabel* label = new QLabel("🔽 로그 파일을 선택하세요:", this);
+    label->setStyleSheet("color: white; font-weight: bold;");
+    layout->addWidget(label);
+    layout->addWidget(logComboBox);
 
-    QList<QPushButton*> buttons = {whitelistBtn, mlBtn, hashBtn, signatureBtn};
-    for (auto btn : buttons) {
-        buttonLayout->addWidget(btn);
-        btn->setMinimumHeight(48);
-        btn->setStyleSheet(R"(
-            QPushButton {
-                background-color: #1e1e2e;
-                color: white;
-                padding: 8px 16px;
-                border-radius: 6px;
-            }
-            QPushButton:hover {
-                background-color: #3e3e5e;
-            }
-        )");
-    }
-
-    // 테이블 초기 설정
+    //csv 테이블
     table->setColumnCount(4);
     table->setHorizontalHeaderLabels(QStringList() << "시간" << "PID" << "경로" << "결과");
-    table->setColumnWidth(0, 288); // 시간
-    table->setColumnWidth(1, 294);  // PID
-    table->setColumnWidth(2, 294); // 경로
-    table->setColumnWidth(3, 300); // 결과
-    QFrame* separator = new QFrame(this);
-    separator->setFrameShape(QFrame::HLine);
-    separator->setFixedHeight(1);
-    separator->setStyleSheet("margin-bottom: 0px; padding-bottom: 0px; color: #2e2e3f;");
-    layout->addWidget(buttonArea);
-    layout->addWidget(separator);
+    // 개별 열 너비 조절
+    table->setColumnWidth(0, 180); // 시간
+    table->setColumnWidth(1, 130);  // PID (좁게)
+    table->setColumnWidth(2, 600); // 경로 (넓게)
+    table->setColumnWidth(3, 150); // 결과
+    table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    table->setSelectionMode(QAbstractItemView::SingleSelection);
+    table->setSelectionBehavior(QAbstractItemView::SelectRows);
     layout->addWidget(table);
+    populateLogFileList();
 
-    // 버튼 클릭 시 로그 파일 로드
-    connect(whitelistBtn, &QPushButton::clicked, this, [=]() {
-        loadLogFile("whitelist");
+    // 콤보박스에서 항목 선택 시 loadLogFile 실행
+    connect(logComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [=](int index) {
+        if (index >= 0) {
+            QString filename = logComboBox->itemText(index).trimmed();
+            if (!filename.isEmpty()) {
+                loadLogFile(filename);
+            }
+        }
     });
-    connect(mlBtn, &QPushButton::clicked, this, [=]() {
-        loadLogFile("ml");
-    });
-    connect(hashBtn, &QPushButton::clicked, this, [=]() {
-        loadLogFile("hash");
-    });
-    connect(signatureBtn, &QPushButton::clicked, this, [=]() {
-        loadLogFile("signature");
-    });
+
 }
 
-void LogViewerWidget::loadLogFile(const QString& method) {
-    if (method.isEmpty()) {
-        return;
-    }
+void LogViewerWidget::loadLogFile(const QString& fileName) {
+    if (fileName.trimmed().isEmpty()) return;
+
     table->clearContents();
     table->setRowCount(0);
 
-    QString path = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation)
-                   + QString("/log_%1.csv").arg(method);
+    QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+    QString filePath = desktopPath + "/" + fileName;
 
-    QFile file(path);
+    QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QMessageBox::warning(this, "오류", QString("파일 열기 실패:\n%1").arg(path));
-        return;
+        qWarning() << "[LogViewer] 파일 열기 실패:" << filePath;
+        return; // 🔇 그냥 return만 하고 알림창 X
     }
 
     QTextStream in(&file);
@@ -109,7 +84,29 @@ void LogViewerWidget::loadLogFile(const QString& method) {
         row++;
     }
 
-    if (row == 0) {
-        QMessageBox::information(this, "정보", QString("'%1' 로그에 기록된 데이터가 없습니다.").arg(method));
+    file.close();
+}
+void LogViewerWidget::populateLogFileList() {
+    QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+    QDir dir(desktopPath);
+    QStringList files = dir.entryList(QStringList() << "*.csv", QDir::Files);
+
+    logComboBox->blockSignals(true);  // 시그널 일시 차단
+    logComboBox->clear();
+    logComboBox->addItems(files);
+    logComboBox->blockSignals(false); // 시그널 다시 연결
+
+    if (!files.isEmpty()) {
+        logComboBox->setCurrentIndex(0); // 첫 항목 선택
+        loadLogFile(files.first());      // 직접 호출
+    } else {
+        QMessageBox::information(this, "안내", "유효한 로그 파일이 없습니다.");
     }
 }
+
+
+void LogViewerWidget::showEvent(QShowEvent* event) {
+    QWidget::showEvent(event);
+    populateLogFileList();  // 창이 보여질 때마다 로그 파일 목록 갱신
+}
+
