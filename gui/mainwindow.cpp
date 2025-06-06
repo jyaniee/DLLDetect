@@ -318,14 +318,16 @@ void MainWindow::startCodeSignatureDetection() {
     QSet<QString> suspiciousSet;
     for (const auto& pair : suspicious)
         suspiciousSet.insert(pair.second);
-    LogManager::writeBulkLog(currentDllList, suspiciousSet, cachedResults, "signature", "signature");
+    QString pidStr = QString::number(cachedResults[lastSelectedRow].pid);
+    LogManager::writeLog("C:/Windows/System32/kernel32.dll", 0, "signature", cachedResults, "signature", pidStr);
+
     if (suspicious.empty()) {
         showCleanResult();
     } else {
         showSuspiciousDLLs(suspicious);
     }
     // ✅ 여기에 임시 강제 로그 저장
-    LogManager::writeLog("C:/Windows/System32/kernel32.dll", 0, "signature", cachedResults, "signature");
+    LogManager::writeBulkLog(currentDllList, suspiciousSet, cachedResults, "signature", "signature", pidStr);
 }
 void MainWindow::updateStage(AppStage newStage){
     currentStage = newStage;
@@ -496,7 +498,8 @@ void MainWindow::handleRowClicked(int row, int column) {
                     QString dllName = QFileInfo(dllPath).fileName();
                     lastAnalyzedDllPath = dllPath;
                     if (whitelistManager->isWhitelisted(dllName)) {
-                        LogManager::writeLog(dllPath, 0, "whitelist", cachedResults, "whitelist");
+                        QString targetPid = QString::number(cachedResults[lastSelectedRow].pid);
+                        LogManager::writeLog(dllPath, 0, "whitelist", cachedResults, "whitelist", targetPid);
                         emit networkAnalyzer->analysisFinished("정상 DLL입니다 (화이트리스트)");
                     } else {
                         networkAnalyzer->analyzeDLL(dllPath);
@@ -542,13 +545,13 @@ void MainWindow::handleRowClicked(int row, int column) {
         if (doc.isObject()) {
             QJsonObject obj = doc.object();
             QJsonArray resultsArray = obj["results"].toArray();
-
+            QString targetPid = QString::number(cachedResults[lastSelectedRow].pid);
             std::vector<std::pair<QString, QString>> suspiciousDLLs;
             for (const QJsonValue &val : resultsArray) {
                 QJsonObject dllObj = val.toObject();
                 int prediction = dllObj["prediction"].toInt();
                 QString dllPath = dllObj["dll_path"].toString();
-                LogManager::writeLog(dllPath, prediction, "ml", cachedResults, "ml");
+                LogManager::writeLog(dllPath, prediction, "ml", cachedResults, "ml", targetPid);
                 if (prediction == 1) {
                     QString dllPath = dllObj["dll_path"].toString();
                     suspiciousDLLs.emplace_back(QFileInfo(dllPath).fileName(), dllPath);
@@ -670,7 +673,8 @@ void MainWindow::startDetectionWithMethod(const QString& method) {
                 suspiciousSet.insert(pair.second);
 
             // ✅ 로그 저장
-            LogManager::writeBulkLog(res.dllList, suspiciousSet, cachedResults, "hash", "hash");
+            QString targetPid = QString::number(cachedResults[lastSelectedRow].pid);
+            LogManager::writeBulkLog(res.dllList, suspiciousSet, cachedResults, "hash", "hash", targetPid);
             if (suspiciousDLLs.empty()) {
                 showCleanResult();
             } else {
@@ -741,6 +745,10 @@ void MainWindow::showCleanResult() {
     animation->setStartValue(0.0);
     animation->setEndValue(1.0);
     animation->start(QAbstractAnimation::DeleteWhenStopped);
+
+    QTimer::singleShot(3000, this, [=]() {
+        resultStatusLabel->clear(); // 또는 resultStatusLabel->hide();
+    });
 }
 
 void MainWindow::showSuspiciousDLLs(const std::vector<std::pair<QString, QString>>& dlls) {
