@@ -14,6 +14,9 @@ model = joblib.load('dll_classifier.pkl')
 def bulk_predict():
     data = request.json
     dll_list = data.get('dll_list')
+    print(" 받은 DLL 리스트:", dll_list)
+
+
 
     if not dll_list:
         return jsonify({'error': 'Missing dll_list'}), 400
@@ -41,6 +44,7 @@ def bulk_predict():
 
     # 예측 수행
     predictions = model.predict(input_data)
+    print(" 예측 결과:", predictions.tolist())
 
     # 결과 정리
     results = []
