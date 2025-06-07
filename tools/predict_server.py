@@ -13,6 +13,7 @@ model = joblib.load('dll_classifier.pkl')
 @app.route('/bulk_predict', methods=['POST'])
 def bulk_predict():
     data = request.json
+    print("요청 데이터:", data)
     dll_list = data.get('dll_list')
 
     if not dll_list:
