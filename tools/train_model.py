@@ -5,7 +5,9 @@ from sklearn.metrics import accuracy_score
 import joblib
 
 # CSV 파일 읽기
-data = pd.read_csv('analyzed_dlls.csv')
+data = pd.read_csv('analyzed_dlls_cleaned.csv')
+data['label'] = data['label'].astype(int)
+
 
 # X(입력 특징)와 y(출력 레이블) 분리
 # 주의: analyzed_dlls.csv에는 아직 '정상/비정상' 레이블이 없으니,
@@ -14,7 +16,7 @@ X = data[['file_size', 'num_sections', 'export_count', 'avg_entropy']]
 
 # y는 일단 '모든 데이터가 정상(0)'이라고 가정
 # (나중에 악성 DLL 데이터 추가하면 바꿀 수 있음)
-y = [0 for _ in range(len(X))]
+y = data['label']
 
 # 학습용/테스트용 데이터셋 분리
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
