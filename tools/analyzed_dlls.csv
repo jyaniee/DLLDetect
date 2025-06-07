@@ -3353,3 +3353,6 @@ C:\Windows\System32\zipcontainer.dll,118784,7,4,2.584407279
 C:\Windows\System32\zipfldr.dll,655360,8,3,3.527423627
 C:\Windows\System32\ztdnsapi.dll,55184,7,6,1.628517397
 C:\Windows\System32\ztrace_maps.dll,53248,7,19,2.063173921
+C:\Windows\System32\test1.dll,26032,4,0,0.60,0
+C:\MyDLLs\test_malicious.dll,123456,3,0,6.80,1
+
