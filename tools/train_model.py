@@ -5,7 +5,7 @@ from sklearn.metrics import accuracy_score
 import joblib
 
 # CSV 파일 읽기
-data = pd.read_csv('analyzed_dlls_cleaned.csv')
+data = pd.read_csv('analyzed_dlls_with_mal.csv')
 data['label'] = data['label'].astype(int)
 
 

@@ -6,7 +6,7 @@ from analyze_dll import analyze_dll  # 🔥 DLL 특징 추출 함수 import
 
 app = Flask(__name__)
 
-# 🔧 사전에 학습된 모델 불러오기
+#  사전에 학습된 모델 불러오기
 model = joblib.load('dll_classifier.pkl')
 
 
@@ -14,9 +14,9 @@ model = joblib.load('dll_classifier.pkl')
 def bulk_predict():
     data = request.json
     dll_list = data.get('dll_list')
-    print(" 받은 DLL 리스트:", dll_list)
 
-
+    # ─── 추가: 받은 DLL 목록 바로 로깅 ───
+    print("받은 DLL 리스트:", dll_list)
 
     if not dll_list:
         return jsonify({'error': 'Missing dll_list'}), 400
@@ -42,9 +42,14 @@ def bulk_predict():
 
     input_data = pd.DataFrame(valid_features)
 
+    # ─── 변경 전: print 위치 오류로 UnboundLocalError 발생 ───
+    # print(" 예측 결과:", predictions.tolist())
+
     # 예측 수행
     predictions = model.predict(input_data)
-    print(" 예측 결과:", predictions.tolist())
+
+    # ─── 추가: 예측 직후 결과 로깅 ───
+    print("예측 결과:", predictions.tolist())
 
     # 결과 정리
     results = []
@@ -69,12 +74,12 @@ def bulk_predict():
 def predict():
     data = request.json
 
-    # 🔍 Qt에서 보내는 DLL 경로 받기
+    #  Qt에서 보내는 DLL 경로 받기
     dll_path = data.get('dll_path')
     if not dll_path:
         return jsonify({'error': 'Missing dll_path'}), 400
 
-    # 🧪 DLL 특징 추출
+    #  DLL 특징 추출
     features = analyze_dll(dll_path)
     if not features:
         return jsonify({'error': 'DLL 분석 실패'}), 500
@@ -88,3 +93,4 @@ def predict():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+
