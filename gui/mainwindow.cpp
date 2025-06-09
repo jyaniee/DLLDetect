@@ -492,6 +492,12 @@ void MainWindow::handleRowClicked(int row, int column) {
         if (!dllList.empty()) {
             for (const std::string &dll : dllList) {
                 QString dllPath = QString::fromStdString(dll);
+                QString lowerPath = dllPath.toLower();
+
+                bool isSystemDLL = lowerPath.startsWith("c:\\windows\\system32") ||
+                                   lowerPath.startsWith("c:\\windows\\system64") ||
+                                   lowerPath.startsWith("c:\\windows\\winsxs");
+
 
                 QPushButton *dllButton = new QPushButton(dllPath);
                 dllButton->setStyleSheet(R"(
@@ -520,13 +526,22 @@ void MainWindow::handleRowClicked(int row, int column) {
                 });
 
                 QLabel *dllLabel = new QLabel(dllPath);
-                dllLabel->setStyleSheet(R"(
-                color: white;
-                background-color: #12131A;
-                padding: 4px;
-                text-align: left;
-                border-bottom: 1px solid #2e2e3f;
-            )");
+                if (isSystemDLL) {
+                    dllLabel->setStyleSheet(R"(
+                    color: white;
+                    background-color: #12131A;
+                    padding: 4px;
+                    border-bottom: 1px solid #2e2e3f;
+                )");
+                } else {
+                    dllLabel->setStyleSheet(R"(
+                    color: orange;
+                    font-weight: bold;
+                    background-color: #12131A;
+                    padding: 4px;
+                    border-bottom: 1px solid #2e2e3f;
+                )");
+                }
 
                 dllLayout->addWidget(dllLabel);
             }

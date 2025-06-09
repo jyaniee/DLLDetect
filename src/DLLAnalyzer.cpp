@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 
+#define PSAPI_VERSION 2
 
 DLLAnalyzer::DLLAnalyzer() {
     // 알려진 DLL 목록 초기화
@@ -40,7 +41,7 @@ std::vector<std::string> DLLAnalyzer::GetLoadedModules(DWORD processID) {
     if (hProcess) {
         HMODULE hMods[1024];
         DWORD cbNeeded;
-        if (EnumProcessModules(hProcess, hMods, sizeof(hMods), &cbNeeded)) {
+        if (EnumProcessModulesEx(hProcess, hMods, sizeof(hMods), &cbNeeded, LIST_MODULES_ALL)) {
             for (unsigned int i = 0; i < (cbNeeded / sizeof(HMODULE)); i++) {
                 char szModName[MAX_PATH];
                 if (GetModuleFileNameExA(hProcess, hMods[i], szModName, sizeof(szModName) / sizeof(char))) {
