@@ -373,12 +373,14 @@ void MainWindow::updateStage(AppStage newStage){
         case AppStage::Home:
             //mainLabel->setText("홈");
             titleLabel->setText("Home");
+            if (detectionResultWidget) detectionResultWidget->hide();
             clearTable();
             clearDLLArea();
             break;
         case AppStage::ProcessSelected:
             //mainLabel->setText("프로세스 선택");
             titleLabel->setText("Process");
+            if (detectionResultWidget) detectionResultWidget->hide();
             break;
         case AppStage::DetectionStarted:
            // mainLabel->setText("DLL 탐지");
@@ -390,6 +392,7 @@ void MainWindow::updateStage(AppStage newStage){
         case AppStage::LogSaved:
             //mainLabel->setText("로그 저장");
             titleLabel->setText("Log");
+            if (detectionResultWidget) detectionResultWidget->hide();
             break;
         }
 
@@ -764,6 +767,19 @@ void MainWindow::showCleanResult() {
 }
 
 void MainWindow::showSuspiciousDLLs(const std::vector<std::pair<QString, QString>>& dlls) {
+    if (currentStage != AppStage::DetectionStarted) {
+        if (detectionResultWidget) detectionResultWidget->hide();
+        return;
+    }
+
+    // 🔓 탐지 탭일 때만 표시
+    detectionResultWidget->show();
+    dllResultTable->setRowCount(static_cast<int>(dlls.size()));
+    for (int i = 0; i < dlls.size(); ++i) {
+        dllResultTable->setItem(i, 0, new QTableWidgetItem(dlls[i].first));
+        dllResultTable->setItem(i, 1, new QTableWidgetItem(dlls[i].second));
+    }
+
     dllResultTable->setRowCount(static_cast<int>(dlls.size()));
     for (int i = 0; i < dlls.size(); ++i) {
         dllResultTable->setItem(i, 0, new QTableWidgetItem(dlls[i].first));
