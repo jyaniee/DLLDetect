@@ -574,22 +574,19 @@ void MainWindow::handleRowClicked(int row, int column) {
         }
     }
 
-void MainWindow::setupDetectionMethodArea(QVBoxLayout* layout) {
-    qDebug() << "[체크] setupDetectionMethodArea() 진입됨";
+    void MainWindow::setupDetectionMethodArea(QVBoxLayout* layout) {
+        qDebug() << "[체크] setupDetectionMethodArea() 진입됨";
 
-    detectionMethodWidget = new QWidget(this);
-    QVBoxLayout* outerLayout = new QVBoxLayout(detectionMethodWidget);
-    outerLayout->setContentsMargins(20, 20, 20, 20);
-    outerLayout->setSpacing(16);
+        detectionMethodWidget = new QWidget(this);
+        QVBoxLayout* outerLayout = new QVBoxLayout(detectionMethodWidget);
+        outerLayout->setContentsMargins(20, 20, 20, 20);
+        outerLayout->setSpacing(16);
 
-    QLabel* title = new QLabel("탐지 방식을 선택하세요:");
-    title->setStyleSheet("color: white; font-weight: bold; font-size: 16px;");
-    outerLayout->addWidget(title);
+        QLabel* title = new QLabel("탐지 방식을 선택하세요:");
+        title->setStyleSheet("color: white; font-weight: bold; font-size: 16px;");
+        outerLayout->addWidget(title);
 
-    QGridLayout* grid = new QGridLayout();
-    grid->setSpacing(12);
-
-    QString baseStyle = R"(
+        QString baseStyle = R"(
         QPushButton {
             background-color: #1e1e2e;
             color: white;
@@ -597,6 +594,7 @@ void MainWindow::setupDetectionMethodArea(QVBoxLayout* layout) {
             font-size: 14px;
             border: 1px solid #2e2e3f;
             border-radius: 10px;
+            min-width: 150px;
         }
         QPushButton:checked {
             background-color: #3e3e5e;
@@ -604,33 +602,31 @@ void MainWindow::setupDetectionMethodArea(QVBoxLayout* layout) {
         }
     )";
 
-    pebButton = new QPushButton("해시 기반");
-    hookButton = new QPushButton("훅 기반");
-    entropyButton = new QPushButton("머신러닝 기반");
-    networkButton = new QPushButton("코드 서명 검증");
+        // ✔ 버튼 3개 (훅 버튼 제거)
+        pebButton = new QPushButton("해시 기반");
+        entropyButton = new QPushButton("WhitelistMLFilter");
+        networkButton = new QPushButton("코드 서명 검증");
 
-    QList<QPushButton*> buttons = {pebButton, hookButton, entropyButton, networkButton};
-    int row = 0, col = 0;
-    for (QPushButton* btn : buttons) {
-        btn->setCheckable(true);
-        btn->setStyleSheet(baseStyle);
-        btn->setMinimumWidth(180);
-        btn->setMinimumHeight(60);
-        grid->addWidget(btn, row, col);
+        QList<QPushButton*> buttons = {entropyButton, pebButton, networkButton};
 
-        connect(btn, &QPushButton::clicked, this, [=]() {
-            for (QPushButton* other : buttons)
-                if (other != btn) other->setChecked(false);
-            selectedDetectionButton = btn;
-        });
+        QHBoxLayout* buttonRow = new QHBoxLayout();
+        buttonRow->setSpacing(20);
+        for (QPushButton* btn : buttons) {
+            btn->setCheckable(true);
+            btn->setStyleSheet(baseStyle);
+            buttonRow->addWidget(btn);
 
-        if (++col == 2) { row++; col = 0; }
-    }
+            connect(btn, &QPushButton::clicked, this, [=]() {
+                for (QPushButton* other : buttons)
+                    if (other != btn) other->setChecked(false);
+                selectedDetectionButton = btn;
+            });
+        }
 
-    outerLayout->addLayout(grid);
+        outerLayout->addLayout(buttonRow);
 
-    QPushButton* runBtn = new QPushButton("탐지 실행");
-    runBtn->setStyleSheet(R"(
+        QPushButton* runBtn = new QPushButton("탐지 실행");
+        runBtn->setStyleSheet(R"(
         QPushButton {
             background-color: #7aa2f7;
             color: white;
@@ -642,21 +638,21 @@ void MainWindow::setupDetectionMethodArea(QVBoxLayout* layout) {
             background-color: #5e7ddc;
         }
     )");
-    runBtn->setFixedSize(120, 40);
+        runBtn->setFixedSize(120, 40);
 
-    connect(runBtn, &QPushButton::clicked, this, [=]() {
-        if (!selectedDetectionButton) {
-            QMessageBox::warning(this, "선택 필요", "탐지 방식을 선택해주세요.");
-            return;
-        }
-        startDetectionWithMethod(selectedDetectionButton->text());
-    });
+        connect(runBtn, &QPushButton::clicked, this, [=]() {
+            if (!selectedDetectionButton) {
+                QMessageBox::warning(this, "선택 필요", "탐지 방식을 선택해주세요.");
+                return;
+            }
+            startDetectionWithMethod(selectedDetectionButton->text());
+        });
 
-    outerLayout->addWidget(runBtn, 0, Qt::AlignRight);
-    detectionMethodWidget->hide();
+        outerLayout->addWidget(runBtn, 0, Qt::AlignRight);
+        detectionMethodWidget->hide();
+        layout->insertWidget(0, detectionMethodWidget);
+    }
 
-    layout->insertWidget(0, detectionMethodWidget);
-}
 
 
 // 현재는 예시로 탐지 방식을 작성해둔거에용
@@ -688,8 +684,6 @@ void MainWindow::startDetectionWithMethod(const QString& method) {
             } else {
                 showSuspiciousDLLs(suspiciousDLLs);
             }
-        } else if (method == "훅 기반") {
-            qDebug() << "훅 기반 탐지 수행 (예제용)";
             showSuspiciousDLLs({{"bad_hook.dll", "C:/hook/bad_hook.dll"}});
         } else if (method == "머신러닝 기반") {
             qDebug() << "머신러닝 탐지 수행";
