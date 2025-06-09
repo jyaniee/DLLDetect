@@ -59,8 +59,6 @@ void LogManager::writeLog(const QString& dllPath,
         QString logLine = QString("%1,%2,%3,%4\n").arg(timestamp, targetPid, dllPath, resultMsg);
         out << logLine;
         file.close();
-
-        qDebug() << "[로그 저장 완료]" << logLine.trimmed();
     } else {
         qWarning() << "[로그 저장 실패]" << filePath;
     }

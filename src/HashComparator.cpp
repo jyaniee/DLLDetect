@@ -21,6 +21,10 @@ void HashComparator::loadHashList(const QString& filePath) {
             }
         }
         file.close();
+        qDebug() << "[해시 목록 로드 완료] 총" << knownHashes.size() << "개";
+        for (const QString& hash : knownHashes) {
+            qDebug() << "✔ 로딩된 해시:" << hash;
+        }
     } else {
         qWarning() << "해시 목록 파일을 열 수 없습니다:" << filePath;
     }
@@ -53,12 +57,12 @@ std::vector<std::pair<QString, QString>> HashComparator::detectSuspiciousDLLs(co
 
     for (const QString &dllPath : dllList) {
         QString hash = calculateHash(dllPath).trimmed().toLower();
-        bool isKnownResult = isKnown(dllPath);
+        bool isKnownResult = knownHashes.contains(hash);  // ⬅ 중복 방지
 
         qDebug() << "DLL 경로:" << dllPath << "해시:" << hash;
         qDebug() << "isKnown 결과:" << isKnownResult;
 
-        if (isKnownResult) {
+        if (!isKnownResult) {  // ✅ 알려지지 않은 해시만 의심 대상으로 분류
             QString dllName = QFileInfo(dllPath).fileName();
             suspiciousDLLs.emplace_back(dllName, dllPath);
         }
