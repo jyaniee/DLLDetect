@@ -11,5 +11,6 @@
         <file>fonts/DMSans-Light.ttf</file>
         <file>fonts/DMSans-Medium.ttf</file>
         <file>fonts/DMSans-Regular.ttf</file>
+        <file>known_hashes.txt</file>
     </qresource>
 </RCC>
