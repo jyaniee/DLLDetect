@@ -310,25 +310,35 @@ void MainWindow::startCodeSignatureDetection() {
     CodeSignatureAnalyzer analyzer;
     std::vector<std::pair<QString, QString>> suspicious;
 
+    // 🔧 DLL 리스트를 결과에 반영 (로그 저장용)
+    currentDllList = cachedResults[lastSelectedRow].dllList;
+    cachedResults[lastSelectedRow].dllList = currentDllList;
+
     for (QString& dll : currentDllList) {
+        int prediction = 0;
         if (analyzer.isSuspicious(dll)) {
+            prediction = 1;
             suspicious.emplace_back(QFileInfo(dll).fileName(), dll);
         }
+
+        QString pidStr = QString::number(cachedResults[lastSelectedRow].pid);
+        LogManager::writeLog(
+            dll,
+            prediction,
+            "signature",
+            cachedResults,
+            "code_signature",
+            pidStr
+            );
     }
-    QSet<QString> suspiciousSet;
-    for (const auto& pair : suspicious)
-        suspiciousSet.insert(pair.second);
-    QString pidStr = QString::number(cachedResults[lastSelectedRow].pid);
-    LogManager::writeLog("C:/Windows/System32/kernel32.dll", 0, "signature", cachedResults, "signature", pidStr);
 
     if (suspicious.empty()) {
         showCleanResult();
     } else {
         showSuspiciousDLLs(suspicious);
     }
-    // ✅ 여기에 임시 강제 로그 저장
-    LogManager::writeBulkLog(currentDllList, suspiciousSet, cachedResults, "signature", "signature", pidStr);
 }
+
 void MainWindow::updateStage(AppStage newStage){
     currentStage = newStage;
 
@@ -778,4 +788,3 @@ void MainWindow::showSuspiciousDLLs(const std::vector<std::pair<QString, QString
 //    }
 
 //    QMessageBox::information(this, "프로세스 DLL 목록", message);
-
