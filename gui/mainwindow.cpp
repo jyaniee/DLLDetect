@@ -698,7 +698,7 @@ void MainWindow::startDetectionWithMethod(const QString& method) {
                 showSuspiciousDLLs(suspiciousDLLs);
             }
             showSuspiciousDLLs({{"bad_hook.dll", "C:/hook/bad_hook.dll"}});
-        } else if (method == "머신러닝 기반") {
+        } else if (method == "WhitelistMLFilter") {
             qDebug() << "머신러닝 탐지 수행";
             const Result &res = cachedResults[lastSelectedRow];
             networkAnalyzer->analyzeDLLs(res.dllList);
