@@ -539,30 +539,38 @@ void MainWindow::handleRowClicked(int row, int column) {
 
 
 
-
     void MainWindow::onAnalysisFinished(const QString &resultJson) {
+        // 1) JSON 파싱
         QJsonDocument doc = QJsonDocument::fromJson(resultJson.toUtf8());
-        if (doc.isObject()) {
-            QJsonObject obj = doc.object();
-            QJsonArray resultsArray = obj["results"].toArray();
-            QString targetPid = QString::number(cachedResults[lastSelectedRow].pid);
-            std::vector<std::pair<QString, QString>> suspiciousDLLs;
-            for (const QJsonValue &val : resultsArray) {
-                QJsonObject dllObj = val.toObject();
-                int prediction = dllObj["prediction"].toInt();
-                QString dllPath = dllObj["dll_path"].toString();
-                LogManager::writeLog(dllPath, prediction, "ml", cachedResults, "ml", targetPid);
-                if (prediction == 1) {
-                    QString dllPath = dllObj["dll_path"].toString();
-                    suspiciousDLLs.emplace_back(QFileInfo(dllPath).fileName(), dllPath);
-                }
-            }
+        if (!doc.isObject()) return;
+        QJsonObject  obj         = doc.object();
+        QJsonArray   resultsArray = obj["results"].toArray();
+        QString      pidStr      = QString::number(cachedResults[lastSelectedRow].pid);
 
-            if (suspiciousDLLs.empty()) {
-                showCleanResult();
-            } else {
-                showSuspiciousDLLs(suspiciousDLLs);
+        // 2) 의심 DLL을 담을 벡터 (원래 코드에 있던 이름 따라)
+        std::vector<std::pair<QString, QString>> suspiciousDLLs;
+
+        // 3) 배열 순회하며 prediction + whitelist 필터링
+        for (const QJsonValue &val : resultsArray) {
+            QJsonObject dllObj    = val.toObject();
+            int         prediction = dllObj["prediction"].toInt();
+            QString     path       = dllObj["dll_path"].toString();
+            QString     dllName    = QFileInfo(path).fileName();
+
+            // 로그 남기기 (원래 있던 코드)
+            LogManager::writeLog(path, prediction, "ml", cachedResults, "ml", pidStr);
+
+            // ★ 여기서 name 대신 dllName, 그리고 suspicious → suspiciousDLLs
+            if (prediction == 1 && !whitelistManager->isWhitelisted(dllName)) {
+                suspiciousDLLs.emplace_back(dllName, path);
             }
+        }
+
+        // 4) UI 갱신
+        if (suspiciousDLLs.empty()) {
+            showCleanResult();
+        } else {
+            showSuspiciousDLLs(suspiciousDLLs);
         }
     }
 

@@ -1,4 +1,4 @@
-﻿filepath,file_size,num_sections,export_count,avg_entropy
+﻿filepath,file_size,num_sections,export_count,avg_entropy,label
 C:\Windows\System32\07409496-a423-4a3e-b620-2cfb01a9318d_HyperV-ComputeNetwork.dll,26032,4,0,0.601333292
 C:\Windows\System32\0ae3b998-9a38-4b72-a4c4-06849441518d_Servicing-Stack.dll,26032,4,0,0.619624295
 C:\Windows\System32\3bc29097-7317-41d3-93b9-38a48f99d48a_mssrch.dll,26032,4,0,0.563637403
@@ -3353,3 +3353,6 @@ C:\Windows\System32\zipcontainer.dll,118784,7,4,2.584407279
 C:\Windows\System32\zipfldr.dll,655360,8,3,3.527423627
 C:\Windows\System32\ztdnsapi.dll,55184,7,6,1.628517397
 C:\Windows\System32\ztrace_maps.dll,53248,7,19,2.063173921
+C:\Windows\System32\test1.dll,26032,4,0,0.60,0
+C:\MyDLLs\test_malicious.dll,123456,3,0,6.80,1
+
