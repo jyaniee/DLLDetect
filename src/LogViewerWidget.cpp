@@ -100,7 +100,7 @@ void LogViewerWidget::populateLogFileList() {
         logComboBox->setCurrentIndex(0); // 첫 항목 선택
         loadLogFile(files.first());      // 직접 호출
     } else {
-        //QMessageBox::information(this, "안내", "유효한 로그 파일이 없습니다.");
+        QMessageBox::information(this, "안내", "유효한 로그 파일이 없습니다.");
     }
 }
 

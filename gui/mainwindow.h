@@ -80,6 +80,7 @@ private:
     QWidget* detectionMethodWidget = nullptr;
     QPushButton* selectedDetectionButton = nullptr;
     QPushButton* pebButton = nullptr;
+    QPushButton* hookButton = nullptr;
     QPushButton* entropyButton = nullptr;
     QPushButton* networkButton = nullptr;
     QLabel *titleLabel;
