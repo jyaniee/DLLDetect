@@ -10,8 +10,7 @@ data['label'] = data['label'].astype(int)
 
 
 # X(입력 특징)와 y(출력 레이블) 분리
-# 주의: analyzed_dlls.csv에는 아직 '정상/비정상' 레이블이 없으니,
-# 일단은 파일 크기, 섹션 수, export 수, 엔트로피만 학습 대상으로 사용
+# 파일 크기, 섹션 수, export 수, 엔트로피만 학습 대상으로 사용
 X = data[['file_size', 'num_sections', 'export_count', 'avg_entropy']]
 
 # y는 일단 '모든 데이터가 정상(0)'이라고 가정
