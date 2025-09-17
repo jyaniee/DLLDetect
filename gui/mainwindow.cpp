@@ -640,6 +640,10 @@ void MainWindow::handleRowClicked(int row, int column) {
         staticTitle->setStyleSheet("color: #ffffff; font-weight: 700; font-size: 16px;");
         outerLayout->addWidget(staticTitle);
 
+        QLabel* hint = new QLabel("※ 정적/스냅샷형: 실행 중 스캔 / 파일·서명·해시 기반 확인");
+        hint->setStyleSheet("color:#a0a7b4; font-size:12px;");
+        outerLayout->addWidget(hint);
+
         // 정적 버튼 3개 (훅 버튼 제거)
         pebButton = new QPushButton("해시 기반");
         entropyButton = new QPushButton("WhitelistMLFilter");
@@ -667,6 +671,10 @@ void MainWindow::handleRowClicked(int row, int column) {
         QLabel* dynamicTitle = new QLabel("동적 탐지 (실시간)");
         dynamicTitle->setStyleSheet("color: #ffffff; font-weight: 700; font-size: 16px;");
         outerLayout->addWidget(dynamicTitle);
+
+        QLabel* hint2 = new QLabel("※ 동적(실시간): OS 알림 기반 / CreateRemoteThread+LoadLibrary 주입 전용 감시");
+        hint2->setStyleSheet("color:#a0a7b4; font-size:12px;");
+        outerLayout->addWidget(hint2);
 
         // 동적 탐지 버튼
         dynamicButton = new QPushButton("동적 감시(LoadLibrary)");
