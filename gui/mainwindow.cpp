@@ -687,6 +687,7 @@ void MainWindow::handleRowClicked(int row, int column) {
 
         chkAutoKill = new QCheckBox("감지 시 프로세스 종료");
         chkAutoKill->setStyleSheet("color: #c0d1d9;");
+        chkAutoKill->setChecked(false);
 
         dynamicRow->addWidget(chkAutoKill);
         dynamicRow->addStretch();
@@ -787,10 +788,16 @@ void MainWindow::startDetectionWithMethod(const QString& method) {
         }
         bool ok=false;
         int pid = resultTable->item(row, 0)->text().toInt(&ok);
+        DWORD selfPid = GetCurrentProcessId();
+        if(DWORD(pid) == selfPid){
+            QMessageBox::warning(this, "대상 오류", "자기 프로세스(PID)에는 감시를 시작할 수 없습니다.\n다른 프로세스를 선택하세요.");
+            return;
+        }
         if(!ok || pid <= 0) {
             QMessageBox::warning(this, "오류", "PID 해석 실패");
             return;
         }
+
         bool autoKill = (chkAutoKill && chkAutoKill->isChecked());
         monitor->startMonitoring(DWORD(pid), autoKill);
 
