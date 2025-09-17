@@ -48,6 +48,11 @@ MainWindow::MainWindow(QWidget *parent)
     whitelistManager = new WhitelistManager();
     whitelistManager->loadWhitelist(":/whitelist.txt");
     hashComparator.loadHashList(":/known_hashes.txt");
+
+    monitor = new DebugEventMonitor(this);
+    connect(monitor, &DebugEventMonitor::logLine, this, &MainWindow::onMonitorLog);
+    connect(monitor, &DebugEventMonitor::alert, this, &MainWindow::onMonitorAlert);
+
     // 기본 설정
     setWindowTitle("Filter Dashboard");
     resize(1280, 800);

@@ -24,6 +24,7 @@
 #include "ProcessManager.h"
 #include "LogViewerWidget.h"
 #include "HashComparator.h"
+#include "DebugEventMonitor.h"
 
 enum class AppStage {
     Home,
@@ -53,9 +54,13 @@ private:
     std::vector<Result> cachedResults;
     WhitelistManager* whitelistManager;
     int lastSelectedRow = -1;
+    DebugEventMonitor* monitor{nullptr};
 private slots:
     void onScanResult(const std::vector<Result>& results);
-    void onAnalysisFinished(const QString &result);  // <-- 추가
+    void onAnalysisFinished(const QString &result);
+    void onStartMonitorClicked();
+    void onMonitorLog(const QString& s);
+    void onMonitorAlert(const QString& action, int score, const QString& path);
 private:
     void saveLog(const QString& dllPath, int prediction, const QString& source);
 
