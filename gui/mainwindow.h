@@ -11,6 +11,8 @@
 #include <QTableWidget>
 #include <QPushButton>
 #include <QComboBox>
+#include <QCheckBox>
+#include <QPushButton>
 #include "ui_mainwindow.h"
 #include "NetworkDLLAnalyzer.h"
 #include "ProcessManager.h"
@@ -59,6 +61,7 @@ private slots:
     void onScanResult(const std::vector<Result>& results);
     void onAnalysisFinished(const QString &result);
     void onStartMonitorClicked();
+    void onStopMonitorClicked();
     void onMonitorLog(const QString& s);
     void onMonitorAlert(const QString& action, int score, const QString& path);
 private:
@@ -66,6 +69,9 @@ private:
 
 
 private:
+    QPushButton* dynamicButton = nullptr;
+    QCheckBox* chkAutoKill = nullptr;
+
     QString lastAnalyzedDllPath;
 
     Ui::MainWindow *ui;

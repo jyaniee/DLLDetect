@@ -62,7 +62,7 @@ add_executable(DLLDetect ${SOURCES} ${MOC_SOURCES} ${HEADERS} ${UIC_SOURCES} ${r
   include/CodeSignatureAnalyzer.h
   src/CodeSignatureAnalyzer.cpp
   src/DebugEventMonitor.cpp
-  src/DebugEventMonitor.h
+  include/DebugEventMonitor.h
 
 
   )

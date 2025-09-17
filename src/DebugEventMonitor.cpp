@@ -69,7 +69,7 @@ void DebugEventMonitor::run(){
 
     DEBUG_EVENT de{};
     const ULONGLONG WINDOW_MS = 300;
-    ULONGLONG lastCreateMs=0; LPVOID lastStart=nullptr;
+    ULONGLONG lastCreateMs=0; ULONG_PTR lastStart= 0;
 
     while(m_running){
         if(!WaitForDebugEvent(&de, 200)) { continue; }
@@ -77,7 +77,7 @@ void DebugEventMonitor::run(){
 
         switch(de.dwDebugEventCode){
             case CREATE_THREAD_DEBUG_EVENT:{  // 디버깅 이벤트 코드가 CREATE_THREAD_DEBUG_EVENT일 때
-                lastStart = de.u.CreateThread.lpStartAddress;
+                lastStart = (ULONG_PTR)de.u.CreateThread.lpStartAddress;
                 lastCreateMs = nowMs();
                 emit logLine(QString("[THREAD] tid=%1 start=%2").arg(de.dwThreadId).arg((quint64)lastStart, 0, 16));
                 break;

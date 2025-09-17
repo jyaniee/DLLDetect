@@ -615,9 +615,9 @@ void MainWindow::handleRowClicked(int row, int column) {
         outerLayout->setContentsMargins(20, 20, 20, 20);
         outerLayout->setSpacing(16);
 
-        QLabel* title = new QLabel("탐지 방식을 선택하세요:");
-        title->setStyleSheet("color: white; font-weight: bold; font-size: 16px;");
-        outerLayout->addWidget(title);
+        //QLabel* title = new QLabel("탐지 방식을 선택하세요:");
+        //title->setStyleSheet("color: white; font-weight: bold; font-size: 16px;");
+        //outerLayout->addWidget(title);
 
         QString baseStyle = R"(
         QPushButton {
@@ -633,16 +633,69 @@ void MainWindow::handleRowClicked(int row, int column) {
             background-color: #3e3e5e;
             border: 2px solid #7aa2f7;
         }
-    )";
+        )";
 
-        // ✔ 버튼 3개 (훅 버튼 제거)
+        // ===== [섹션 1] 정적 / 스냅샷형 탐지 =====
+        QLabel* staticTitle = new QLabel("정적 / 스냅샷형 탐지");
+        staticTitle->setStyleSheet("color: #ffffff; font-weight: 700; font-size: 16px;");
+        outerLayout->addWidget(staticTitle);
+
+        // 정적 버튼 3개 (훅 버튼 제거)
         pebButton = new QPushButton("해시 기반");
         entropyButton = new QPushButton("WhitelistMLFilter");
         networkButton = new QPushButton("코드 서명 검증");
 
-        QList<QPushButton*> buttons = {entropyButton, pebButton, networkButton};
+        // 행 레이아웃
+        QHBoxLayout* staticRow = new QHBoxLayout();
+        staticRow->setSpacing(20);
+        for (QPushButton* btn : { entropyButton, pebButton, networkButton }) {
+            btn->setCheckable(true);
+            btn->setStyleSheet(baseStyle);
+            staticRow->addWidget(btn);
+        }
+        outerLayout->addLayout(staticRow);
 
-        QHBoxLayout* buttonRow = new QHBoxLayout();
+        // 섹션 구분선
+        QFrame* divider = new QFrame();
+        divider->setFrameShape(QFrame::HLine);
+        divider->setFrameShadow(QFrame::Sunken);
+        divider->setStyleSheet("color: #2e2e3f;");
+        outerLayout->addWidget(divider);
+
+
+        // ===== [섹션 2] 동적 탐지 (실시간) =====
+        QLabel* dynamicTitle = new QLabel("동적 탐지 (실시간)");
+        dynamicTitle->setStyleSheet("color: #ffffff; font-weight: 700; font-size: 16px;");
+        outerLayout->addWidget(dynamicTitle);
+
+        // 동적 탐지 버튼
+        dynamicButton = new QPushButton("동적 감시(LoadLibrary)");
+        dynamicButton->setCheckable(true);
+        dynamicButton->setStyleSheet(baseStyle);
+
+        QHBoxLayout* dynamicRow = new QHBoxLayout();
+        dynamicRow->setSpacing(20);
+        dynamicRow->addWidget(dynamicButton);
+
+        chkAutoKill = new QCheckBox("감지 시 프로세스 종료");
+        chkAutoKill->setStyleSheet("color: #c0d1d9;");
+
+        dynamicRow->addWidget(chkAutoKill);
+        dynamicRow->addStretch();
+        outerLayout->addLayout(dynamicRow);
+
+
+        // ===== 버튼 상호배타 선택 연결 (두 섹션 모두 포함) =====
+        QList<QPushButton*> allButtons = { entropyButton, pebButton, networkButton, dynamicButton };
+        for (QPushButton* btn : allButtons) {
+            connect(btn, &QPushButton::clicked, this, [=]() {
+                for (QPushButton* other : allButtons)
+                    if (other != btn) other->setChecked(false);
+                selectedDetectionButton = btn;
+            });
+        }
+
+        /* QHBoxLayout* buttonRow = new QHBoxLayout();
         buttonRow->setSpacing(20);
         for (QPushButton* btn : buttons) {
             btn->setCheckable(true);
@@ -655,10 +708,24 @@ void MainWindow::handleRowClicked(int row, int column) {
                 selectedDetectionButton = btn;
             });
         }
+        */
 
-        outerLayout->addLayout(buttonRow);
+        // outerLayout->addLayout(buttonRow);
 
-        QPushButton* runBtn = new QPushButton("탐지 실행");
+
+        // ===== 실행/중지 버튼 행 =====
+        QHBoxLayout* runRow = new QHBoxLayout();
+        runRow->setSpacing(12);
+
+        QPushButton* stopBtn = new QPushButton("감시 중지");
+        stopBtn->setFixedSize(120, 40);
+        stopBtn->setStyleSheet(R"(
+        QPushButton { background-color: #444c56; color: white; border-radius: 6px; }
+        QPushButton:hover { background-color: #586069; }
+        )");
+        connect(stopBtn, &QPushButton::clicked, this, &MainWindow::onStopMonitorClicked);
+
+        QPushButton* runBtn = new QPushButton("탐지 시작");
         runBtn->setStyleSheet(R"(
         QPushButton {
             background-color: #7aa2f7;
@@ -680,8 +747,12 @@ void MainWindow::handleRowClicked(int row, int column) {
             }
             startDetectionWithMethod(selectedDetectionButton->text());
         });
+        runRow->addStretch();
+        runRow->addWidget(stopBtn);
+        runRow->addWidget(runBtn);
+        outerLayout->addLayout(runRow);
 
-        outerLayout->addWidget(runBtn, 0, Qt::AlignRight);
+        // outerLayout->addWidget(runBtn, 0, Qt::AlignRight);
         detectionMethodWidget->hide();
         layout->insertWidget(0, detectionMethodWidget);
     }
@@ -699,7 +770,26 @@ void MainWindow::startDetectionWithMethod(const QString& method) {
         resultStatusLabel->setStyleSheet("color: white; font-size: 14px;");
         resultStatusLabel->setText("🔍 탐지 중...");
     }
+    if(method == "동적 감시(LoadLibrary)"){
+        int row = resultTable->currentRow();
+        if(row<0 && lastSelectedRow >= 0) row = lastSelectedRow;
+        if(row < 0){
+            QMessageBox::warning(this, "선택 필요", "프로세스를 먼저 선택하세요.");
+            return;
+        }
+        bool ok=false;
+        int pid = resultTable->item(row, 0)->text().toInt(&ok);
+        if(!ok || pid <= 0) {
+            QMessageBox::warning(this, "오류", "PID 해석 실패");
+            return;
+        }
+        bool autoKill = (chkAutoKill && chkAutoKill->isChecked());
+        monitor->startMonitoring(DWORD(pid), autoKill);
 
+        resultStatusLabel->setText(QString("🟢 동적 감시 시작 (PID %1) — 새 스레드 시작 ↔ DLL 로드 알림을 상관 분석합니다.").arg(pid));
+
+        return;
+    }
     // 🔴 1.5초 후 실제 탐지 수행
     QTimer::singleShot(1500, this, [=]() {
         if (method == "해시 기반") {
@@ -818,3 +908,33 @@ void MainWindow::showSuspiciousDLLs(const std::vector<std::pair<QString, QString
 //    }
 
 //    QMessageBox::information(this, "프로세스 DLL 목록", message);
+
+void MainWindow::onStartMonitorClicked(){
+    int row = resultTable->currentRow();
+    if(row<0) { warnUser("프로세스를 먼저 선택하세요"); return; }
+    bool ok=false;
+    int pid = resultTable->item(row, 0)->text().toInt(&ok);
+    if(!ok) { warnUser("PID 해석 실패"); return; }
+    monitor->startMonitoring(DWORD(pid), /*autoKill=*/false);
+    warnUser(QString("PID %1 감시 시작").arg(pid));
+}
+
+void MainWindow::onStopMonitorClicked() {
+    monitor->stopMonitoring();
+    if (resultStatusLabel) {
+        resultStatusLabel->setText("⏹ 감시 중지");
+    }
+}
+
+void MainWindow::onMonitorAlert(const QString& action, int score, const QString& path){
+    if(action=="warn"){
+        warnUser(QString("[경고] 의심 점수 %1, DLL=%2").arg(score).arg(path));
+    } else if(action=="terminate"){
+        warnUser(QString("[차단] 프로세스 종료 (점수 %1)").arg(score));
+    }
+}
+
+void MainWindow::onMonitorLog(const QString& s){
+    qDebug() << s;
+    // LogManager::writeLog() 연동 -> 승찬이
+}
