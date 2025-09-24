@@ -7,9 +7,22 @@
 #include <QSvgRenderer>
 #include <QDirIterator>
 #include <QFont>
+#include <windows.h>
 
 int main(int argc, char *argv[])
 {
+    BOOL isAdmin = FALSE;
+    HANDLE hToken = NULL;
+    if( OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken)){
+        TOKEN_ELEVATION elevation;
+        DWORD size;
+        if (GetTokenInformation(hToken, TokenElevation, &elevation, sizeof(elevation), &size)){
+            isAdmin = elevation.TokenIsElevated;
+        }
+        CloseHandle(hToken);
+    }
+
+
     QApplication a(argc, argv);
     MainWindow w;
     w.show();

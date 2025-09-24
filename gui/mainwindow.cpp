@@ -241,6 +241,7 @@ void MainWindow::setupDetectButtonArea(QVBoxLayout* layout) {
     detectButton = new QPushButton("탐지 시작", this);
     detectButton->setFixedSize(160, 40);
     detectButton->setVisible(false);
+    detectButton->setEnabled(false);
 
     detectButton->setStyleSheet(R"(
         QPushButton {
@@ -563,7 +564,11 @@ void MainWindow::handleRowClicked(int row, int column) {
         }
 
         detectButton->setVisible(true);
+        detectButton->setEnabled(true);
 
+        qDebug() << "[DEBUG] handleRowClicked: row=" << row
+                 << " pid=" << pid
+                 << " lastSelectedRow=" << lastSelectedRow;
         // ✅ 수동으로 테스트 DLL 삽입
     //   currentDllList.clear();
   //     currentDllList.append("C:/Users/jeong/source/repos/UnsignedTestDLL/x64/Debug/UnsignedTestDLL.dll");
@@ -782,22 +787,23 @@ void MainWindow::startDetectionWithMethod(const QString& method) {
     if(method == "동적 감시(LoadLibrary)"){
         int row = resultTable->currentRow();
         if(row<0 && lastSelectedRow >= 0) row = lastSelectedRow;
-        if(row < 0){
+        if(row < 0 || row >= resultTable->rowCount()){
             QMessageBox::warning(this, "선택 필요", "프로세스를 먼저 선택하세요.");
             return;
         }
         bool ok=false;
         int pid = resultTable->item(row, 0)->text().toInt(&ok);
+
+        if(!ok || pid <= 0){
+            QMessageBox::warning(this,"오류","PID해석 실패");
+            return;
+        }
+
         DWORD selfPid = GetCurrentProcessId();
         if(DWORD(pid) == selfPid){
             QMessageBox::warning(this, "대상 오류", "자기 프로세스(PID)에는 감시를 시작할 수 없습니다.\n다른 프로세스를 선택하세요.");
             return;
         }
-        if(!ok || pid <= 0) {
-            QMessageBox::warning(this, "오류", "PID 해석 실패");
-            return;
-        }
-
         bool autoKill = (chkAutoKill && chkAutoKill->isChecked());
         monitor->startMonitoring(DWORD(pid), autoKill);
 
