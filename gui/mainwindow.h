@@ -56,6 +56,8 @@ private:
     std::vector<Result> cachedResults;
     WhitelistManager* whitelistManager;
     int lastSelectedRow = -1;
+    int currentSelectedPid = -1;
+
     DebugEventMonitor* monitor{nullptr};
 private slots:
     void onScanResult(const std::vector<Result>& results);

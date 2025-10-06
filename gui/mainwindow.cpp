@@ -32,7 +32,8 @@
 #include <QTimer>
 #include <QFontDatabase>
 #include <QJsonArray>
-
+#include <QSet>
+#include <windows.h>
 // ------------------ MainWindow 생성자 ------------------
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent) {
@@ -174,7 +175,8 @@ MainWindow::MainWindow(QWidget *parent)
     resultTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     resultTable->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     resultTable->hide();
-
+    connect(resultTable, &QTableWidget::cellClicked,
+            this, &MainWindow::handleRowClicked);
     setupDLLArea();  // → dllScrollArea 생성됨
     dllScrollArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
@@ -451,7 +453,7 @@ void MainWindow::onScanResult(const std::vector<Result>& results){
         resultTable->setItem(i, 0, new QTableWidgetItem(QString::number(res.pid)));
         resultTable->setItem(i, 1, new QTableWidgetItem(res.processName));
     }
-    connect(resultTable, &QTableWidget::cellClicked, this, &MainWindow::handleRowClicked);
+//    connect(resultTable, &QTableWidget::cellClicked, this, &MainWindow::handleRowClicked);
     cachedResults = results;
 
     resultTable->show();
@@ -566,14 +568,16 @@ void MainWindow::handleRowClicked(int row, int column) {
         detectButton->setVisible(true);
         detectButton->setEnabled(true);
 
+        currentSelectedPid = pid;  // ← 화면 전환돼도 PID를 기억
         qDebug() << "[DEBUG] handleRowClicked: row=" << row
                  << " pid=" << pid
-                 << " lastSelectedRow=" << lastSelectedRow;
+                 << " lastSelectedRow=" << lastSelectedRow
+                 << " currentSelectedPid=" << currentSelectedPid;
+}
         // ✅ 수동으로 테스트 DLL 삽입
     //   currentDllList.clear();
   //     currentDllList.append("C:/Users/jeong/source/repos/UnsignedTestDLL/x64/Debug/UnsignedTestDLL.dll");
 
-    }
 
 
 
@@ -775,6 +779,10 @@ void MainWindow::handleRowClicked(int row, int column) {
 
 // 현재는 예시로 탐지 방식을 작성해둔거에용
 void MainWindow::startDetectionWithMethod(const QString& method) {
+    qDebug() << "[DEBUG] startDetectionWithMethod called, method=" << method
+             << " lastSelectedRow=" << lastSelectedRow
+             << " cachedResults.size()=" << cachedResults.size();
+
     qDebug() << "선택된 탐지 방식:" << method;
 
     // 🔴 탐지 결과 UI 초기화
@@ -784,26 +792,68 @@ void MainWindow::startDetectionWithMethod(const QString& method) {
         resultStatusLabel->setStyleSheet("color: white; font-size: 14px;");
         resultStatusLabel->setText("🔍 탐지 중...");
     }
-    if(method == "동적 감시(LoadLibrary)"){
-        int row = resultTable->currentRow();
-        if(row<0 && lastSelectedRow >= 0) row = lastSelectedRow;
-        if(row < 0 || row >= resultTable->rowCount()){
+    if (method == "동적 감시(LoadLibrary)") {
+        // currentRow()는 탭 이동 시 리셋되므로, 마지막 클릭된 행만 신뢰
+        int row = lastSelectedRow;
+
+        // cachedResults 기준으로 범위 확인
+        if (row < 0 || row >= static_cast<int>(cachedResults.size())) {
             QMessageBox::warning(this, "선택 필요", "프로세스를 먼저 선택하세요.");
             return;
         }
-        bool ok=false;
+
+
+/*        bool ok=false;
         int pid = resultTable->item(row, 0)->text().toInt(&ok);
 
         if(!ok || pid <= 0){
             QMessageBox::warning(this,"오류","PID해석 실패");
             return;
+        }*/
+        const Result& r = cachedResults[row];
+        int pid = r.pid;
+        if (pid <= 0) {
+            QMessageBox::warning(this, "오류", "PID 해석 실패");
+            return;
         }
-
         DWORD selfPid = GetCurrentProcessId();
         if(DWORD(pid) == selfPid){
             QMessageBox::warning(this, "대상 오류", "자기 프로세스(PID)에는 감시를 시작할 수 없습니다.\n다른 프로세스를 선택하세요.");
             return;
         }
+        // ---------- [ADD] 프리플라이트 가드 ----------
+        auto isCriticalName = [](const QString& nameLower) {
+            static const QSet<QString> ban = {
+                "system", "smss.exe", "csrss.exe", "wininit.exe",
+                "services.exe", "lsass.exe", "winlogon.exe"
+            };
+            return ban.contains(nameLower);
+        };
+        if (pid == 4 || isCriticalName(r.processName.toLower())) {
+            QMessageBox::warning(this, "차단됨",
+                                 "시스템/보호 프로세스에는 동적 감시를 붙일 수 없습니다.\n"
+                                 "메모장(notepad.exe) 같은 일반 사용자 프로세스로 테스트하세요.");
+            return;
+        }
+        DWORD sess = 0;
+        if (ProcessIdToSessionId(DWORD(pid), &sess) && sess == 0) {
+            QMessageBox::warning(this, "차단됨",
+                                 "세션 0(서비스) 프로세스는 동적 감시 대상에서 제외됩니다.");
+            return;
+        }
+        HANDLE hp = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, DWORD(pid));
+        if (!hp) {
+            QMessageBox::warning(this, "실패", "프로세스 핸들을 열 수 없습니다. (종료/권한 문제)");
+            return;
+        }
+        BOOL dbg = FALSE;
+        CheckRemoteDebuggerPresent(hp, &dbg);
+        CloseHandle(hp);
+        if (dbg) {
+            QMessageBox::warning(this, "차단됨", "이미 다른 디버거가 붙어있는 프로세스입니다.");
+            return;
+        }
+        // ---------------------------------------------
         bool autoKill = (chkAutoKill && chkAutoKill->isChecked());
         monitor->startMonitoring(DWORD(pid), autoKill);
 
@@ -841,6 +891,7 @@ void MainWindow::startDetectionWithMethod(const QString& method) {
             qDebug() << "⚠️ 알 수 없는 탐지 방식:" << method;
             resultStatusLabel->setText("⚠️ 알 수 없는 탐지 방식입니다.");
         }
+
     });  // QTimer::singleShot 닫힘
 }  // startDetectionWithMethod 닫힘
 
