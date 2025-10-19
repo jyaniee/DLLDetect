@@ -33,6 +33,8 @@
 #include <QFontDatabase>
 #include <QJsonArray>
 #include <QSet>
+#include <QSvgRenderer>
+#include <QPainter>
 #include <windows.h>
 // ------------------ MainWindow 생성자 ------------------
 MainWindow::MainWindow(QWidget *parent)
@@ -55,7 +57,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(monitor, &DebugEventMonitor::alert, this, &MainWindow::onMonitorAlert);
 
     // 기본 설정
-    setWindowTitle("Filter Dashboard");
+    setWindowTitle("No Syringe");
     resize(1280, 800);
 
     QFontDatabase::addApplicationFont(":/fonts/DMSans-Bold.ttf");
@@ -135,6 +137,10 @@ MainWindow::MainWindow(QWidget *parent)
         btn->setIcon(QIcon(icon));
         btn->setIconSize(QSize(24, 24));
         btn->setToolButtonStyle(Qt::ToolButtonIconOnly);
+
+        btn->setCheckable(true);
+        btn->setAutoExclusive(true);
+
         btn->setStyleSheet(R"(
             QToolButton {
                 border: none;
@@ -146,12 +152,34 @@ MainWindow::MainWindow(QWidget *parent)
             }
             QToolButton:checked {
                 background-color: #3e3e5e;
+                color: #05C7F2;
             })");
         btn->setToolTip(stages[index]);
         sideLayout->addWidget(btn);
         stageButtons.append(btn);
+
         connect(btn, &QToolButton::clicked, this, [=]() {
             handleStageClick(index);
+
+            for(int i = 0; i < stageButtons.size(); ++i) {
+                QToolButton *b  = stageButtons[i];
+                if(i == index){
+                    // 선택된 버튼 -> 아이콘 색 #05C7F2로 다시 설정
+                    QPixmap colored = QPixmap(24, 24);
+                    colored.fill(Qt::transparent);
+                    QSvgRenderer renderer(icons[i]);
+                    QPainter p(&colored);
+                    renderer.render(&p);
+                    p.setCompositionMode(QPainter::CompositionMode_SourceIn);
+                    p.fillRect(colored.rect(), QColor("#05C7F2"));
+                    p.end();
+
+                    b->setIcon(QIcon(colored));
+                } else {
+                    // 선택 안 된 버튼 -> 기본 아이콘
+                    b->setIcon(QIcon(icons[i]));
+                }
+            }
         });
         ++index;
     }
@@ -215,6 +243,23 @@ MainWindow::MainWindow(QWidget *parent)
     mainLayout->addWidget(contentArea);
 
     updateStage(AppStage::Home);
+    if(!stageButtons.isEmpty()){
+        stageButtons[0]->setChecked(true);
+
+        QPixmap colored(24, 24);
+        colored.fill(Qt::transparent);
+
+        const QString homeIconPath = icons.value(0);
+        QSvgRenderer renderer(homeIconPath);
+        QPainter p(&colored);
+        renderer.render(&p);
+        p.setCompositionMode(QPainter::CompositionMode_SourceIn);
+        p.fillRect(colored.rect(), QColor("#05C7F2"));
+        p.end();
+
+        stageButtons[0]->setIcon(QIcon(colored));
+
+    }
 }
 
 
