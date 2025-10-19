@@ -53,7 +53,6 @@ protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
     bool event(QEvent *event) override;
     void changeEvent(QEvent *event) override;
-
 private:
     HashComparator hashComparator;
     LogViewerWidget* logViewer;
@@ -70,6 +69,9 @@ private:
     QWidget* windowFrame = nullptr;
     QVBoxLayout* frameLayout = nullptr;
     void updateChromeBorder();
+
+    QStringList iconPaths;
+    void applySidebarSelection(int index);
 private slots:
     void onScanResult(const std::vector<Result>& results);
     void onAnalysisFinished(const QString &result);

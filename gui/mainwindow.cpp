@@ -69,6 +69,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // 아이콘 및 스테이지 설정
     QStringList icons = {":/img/home.svg", ":/img/list.svg", ":/img/searching.svg", ":/img/pattern.svg"};
+    iconPaths = icons;
     QStringList stages = {"Home", "Process", "Detection", "Log"};
 
     // 메인 중앙 위젯 구성
@@ -233,6 +234,8 @@ MainWindow::MainWindow(QWidget *parent)
         stageButtons.append(btn);
 
         connect(btn, &QToolButton::clicked, this, [=]() {
+            handleStageClick(index); // updateStage 내부에서 applySidebarSelection이 호출됨
+            /*
             handleStageClick(index);
 
             for(int i = 0; i < stageButtons.size(); ++i) {
@@ -253,7 +256,7 @@ MainWindow::MainWindow(QWidget *parent)
                     // 선택 안 된 버튼 -> 기본 아이콘
                     b->setIcon(QIcon(icons[i]));
                 }
-            }
+            }*/
         });
         ++index;
     }
@@ -399,10 +402,10 @@ void MainWindow::setupDetectButtonArea(QVBoxLayout* layout) {
 
     detectButton->setStyleSheet(R"(
         QPushButton {
-            background-color: #3e3e5e;
+            background-color: #02abe1;
             color: white;
             font-weight: bold;
-            border-radius: 8px;
+            border-radius: 20px;
         }
         QPushButton:hover {
             background-color: #5e5e7e;
@@ -555,6 +558,7 @@ void MainWindow::updateStage(AppStage newStage){
             if (detectionResultWidget) detectionResultWidget->hide();
             break;
         }
+        applySidebarSelection(static_cast<int>(currentStage));
 
 
 }
@@ -1212,6 +1216,29 @@ bool MainWindow::event(QEvent* e) {
         updateChromeBorder();
     }
     return QMainWindow::event(e);
+}
+
+void MainWindow::applySidebarSelection(int index) {
+    for (int i = 0; i < stageButtons.size(); ++i) {
+        QToolButton* b = stageButtons[i];
+        b->setChecked(i == index);
+
+        if (i == index) {
+            // 선택 아이콘을 #05C7F2 로 재채색
+            QPixmap colored(24, 24);
+            colored.fill(Qt::transparent);
+            QSvgRenderer renderer(iconPaths.value(i));
+            QPainter p(&colored);
+            renderer.render(&p);
+            p.setCompositionMode(QPainter::CompositionMode_SourceIn);
+            p.fillRect(colored.rect(), QColor("#05C7F2"));
+            p.end();
+            b->setIcon(QIcon(colored));
+        } else {
+            // 비선택 아이콘은 원본
+            b->setIcon(QIcon(iconPaths.value(i)));
+        }
+    }
 }
 
 
