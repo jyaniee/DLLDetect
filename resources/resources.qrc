@@ -12,5 +12,6 @@
         <file>fonts/DMSans-Medium.ttf</file>
         <file>fonts/DMSans-Regular.ttf</file>
         <file>known_hashes.txt</file>
+        <file>img/no_syringe.png</file>
     </qresource>
 </RCC>

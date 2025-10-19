@@ -300,6 +300,8 @@ MainWindow::MainWindow(QWidget *parent)
     setupDLLArea();  // → dllScrollArea 생성됨
     dllScrollArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
+    dllScrollArea->hide();
+
     //QVBoxLayout *contentSplitLayout = new QVBoxLayout();
     contentSplitLayout = new QVBoxLayout();
     contentSplitLayout->setSpacing(10);
@@ -323,6 +325,8 @@ MainWindow::MainWindow(QWidget *parent)
     logViewer = new LogViewerWidget(this);
     logViewer->hide();
     mainContentLayout->addWidget(logViewer);
+
+    setupHomePage();
 
     // ---------------- 조립 ----------------
     contentLayout->addWidget(sidePanel);
@@ -385,6 +389,10 @@ MainWindow::MainWindow(QWidget *parent)
     )");
 
     updateChromeBorder();
+
+    QTimer::singleShot(0, this, [this](){
+        updateStage(AppStage::Home);  // 레이아웃/지오메트리 완성 후에 최종 정렬
+    });
 }
 
 
@@ -433,11 +441,14 @@ void MainWindow::setupDetectButtonArea(QVBoxLayout* layout) {
         handleStageClick(2);
     });
 
-    QWidget* buttonWrapper = new QWidget();
-    QVBoxLayout* wrapperLayout = new QVBoxLayout(buttonWrapper);
+    detectButtonWrapper = new QWidget();
+    QVBoxLayout* wrapperLayout = new QVBoxLayout(detectButtonWrapper);
     wrapperLayout->setContentsMargins(0, 30, 0, 10);
     wrapperLayout->addWidget(detectButton, 0, Qt::AlignHCenter);
-    layout->addWidget(buttonWrapper);
+
+    detectButtonWrapper->setVisible(false);
+
+    layout->addWidget(detectButtonWrapper);
 }
 
 
@@ -548,6 +559,8 @@ void MainWindow::startCodeSignatureDetection() {
 void MainWindow::updateStage(AppStage newStage){
     currentStage = newStage;
 
+    auto hideIf = [](QWidget* w){ if (w) w->hide(); };
+
     for(int i=0; i<stageButtons.size(); i++){
         QString style;
         //if(i == 0){
@@ -574,18 +587,30 @@ void MainWindow::updateStage(AppStage newStage){
 
     if (detectionMethodWidget) detectionMethodWidget->setVisible(false);
 
+    if (detectButtonWrapper) detectButtonWrapper->setVisible(false);
 
         switch(currentStage){
         case AppStage::Home:
             //mainLabel->setText("홈");
             titleLabel->setText("Home");
+            // 홈 위젯만 표시
+            if (homeWidget) homeWidget->show();
+
+            // 숨김
+            if (resultTable) resultTable->hide();
+            if (dllScrollArea) dllScrollArea->hide();
+            if (logViewer) logViewer->hide();
+            if (procFilterBar) procFilterBar->hide();
+            if (detectionMethodWidget) detectionMethodWidget->hide();
             if (detectionResultWidget) detectionResultWidget->hide();
+            if (detectButtonWrapper) detectButtonWrapper->hide();
             clearTable();
             clearDLLArea();
             break;
         case AppStage::ProcessSelected:
             //mainLabel->setText("프로세스 선택");
             titleLabel->setText("Process");
+            hideIf(homeWidget);
             if (detectionResultWidget) detectionResultWidget->hide();
             break;
         case AppStage::DetectionStarted:
@@ -593,11 +618,13 @@ void MainWindow::updateStage(AppStage newStage){
             titleLabel->setText("Detection");
             clearTable();
             clearDLLArea();
+            hideIf(homeWidget);
             if(detectionMethodWidget) detectionMethodWidget->show();
             break;
         case AppStage::LogSaved:
             //mainLabel->setText("로그 저장");
             titleLabel->setText("Log");
+            hideIf(homeWidget);
             if (detectionResultWidget) detectionResultWidget->hide();
             break;
         }
@@ -763,7 +790,7 @@ void MainWindow::handleRowClicked(int row, int column) {
             noDLLLabel->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
             dllLayout->addWidget(noDLLLabel);
         }
-
+        if (detectButtonWrapper) detectButtonWrapper->setVisible(true);
         detectButton->setVisible(true);
         detectButton->setEnabled(true);
 
@@ -1369,4 +1396,86 @@ void MainWindow::ensureProcFilterBar()
 
     // 처음엔 숨김
     procFilterBar->hide();
+}
+
+void MainWindow::setupHomePage() {
+    if (homeWidget) return;
+
+    homeWidget = new QWidget(this);
+    QVBoxLayout* layout = new QVBoxLayout(homeWidget);
+    layout->setContentsMargins(20, 0, 20, 0);  // 상단 마진 제거
+    layout->setSpacing(20);
+
+    // 위쪽 여백 추가
+    layout->addStretch(1);
+
+    QLabel* logoLabel = new QLabel();
+    QPixmap logoPix(":/img/no_syringe.png");
+
+    if (!logoPix.isNull()) {
+        // 크기 변경 (예: 240x240)
+        QPixmap scaled = logoPix.scaled(420, 420, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+        // 색상 변환 (흰색으로)
+        QPixmap whiteLogo(scaled.size());
+        whiteLogo.fill(Qt::transparent);
+        {
+            QPainter p(&whiteLogo);
+            p.drawPixmap(0, 0, scaled);
+            p.setCompositionMode(QPainter::CompositionMode_SourceIn);
+            p.fillRect(whiteLogo.rect(), QColor("#FFFFFF")); // 흰색으로 덮기
+            p.end();
+        }
+
+        logoLabel->setPixmap(whiteLogo);
+        logoLabel->setAlignment(Qt::AlignCenter);
+    } else {
+        // 로고 로드 실패 시 텍스트 표시
+        logoLabel->setText("No Syringe");
+        logoLabel->setStyleSheet("color: white; font-size: 32px; font-weight: 900;");
+        logoLabel->setAlignment(Qt::AlignCenter);
+    }
+
+
+    QLabel* subtitle = new QLabel("Detect, Analyze, and Visualize Injection.");
+    subtitle->setStyleSheet("color: #a0a7b4; font-size: 14px;");
+    subtitle->setAlignment(Qt::AlignCenter);
+
+    QLabel* desc = new QLabel(
+        "DLL 인젝션 행위를 분석하고 탐지하는 시스템입니다.\n"
+        "아래 버튼을 눌러 프로세스를 선택하고 탐지를 시작하세요."
+        );
+    desc->setStyleSheet("color: #d0d0d0; font-size: 13px;");
+    desc->setAlignment(Qt::AlignCenter);
+
+    QPushButton* startBtn = new QPushButton("프로세스 선택으로 이동");
+    startBtn->setFixedSize(220, 45);
+    startBtn->setStyleSheet(R"(
+        QPushButton {
+            background-color: #02abe1;
+            color: white;
+            font-family: 'Noto Sans KR';
+            font-weight: 700;
+            border-radius: 22px;
+            font-size: 14px;
+        }
+        QPushButton:hover { background-color: #0298cc; }
+    )");
+    connect(startBtn, &QPushButton::clicked, this, [=]() {
+        handleStageClick(1);
+    });
+
+    layout->addWidget(logoLabel);
+    layout->addSpacing(10);
+    layout->addWidget(subtitle);
+    layout->addSpacing(20);
+    layout->addWidget(desc);
+    layout->addSpacing(30);
+    layout->addWidget(startBtn, 0, Qt::AlignHCenter);
+
+    // 아래쪽 여백 추가
+    layout->addStretch(1);
+
+    mainContentLayout->addWidget(homeWidget);
+    homeWidget->hide();
 }

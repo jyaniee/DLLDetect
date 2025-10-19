@@ -143,6 +143,9 @@ private:
 
     QPushButton* signatureButton = nullptr;
 
+    void setupHomePage();
+    QWidget* homeWidget = nullptr;
+    QWidget* detectButtonWrapper = nullptr;
 
 };
 
