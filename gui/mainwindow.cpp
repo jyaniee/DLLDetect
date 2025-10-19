@@ -1009,7 +1009,7 @@ void MainWindow::handleRowClicked(int row, int column) {
                 return;
             }
             startDetectionWithMethod(selectedDetectionButton->text());
-            startStatusAnimation(currentSelectedPid);
+            // startStatusAnimation(currentSelectedPid);
         });
         runRow->addStretch();
         runRow->addWidget(stopBtn);
@@ -1024,6 +1024,8 @@ void MainWindow::handleRowClicked(int row, int column) {
 
 
 void MainWindow::startDetectionWithMethod(const QString& method) {
+    stopStatusAnimation(); // 어떤 방식이든 시작 시점에 애니메이션/문구를 안전하게 리셋
+
     qDebug() << "[DEBUG] startDetectionWithMethod called, method=" << method
              << " lastSelectedRow=" << lastSelectedRow
              << " cachedResults.size()=" << cachedResults.size();
