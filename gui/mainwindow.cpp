@@ -37,6 +37,11 @@
 #include <QPainter>
 #include <QMouseEvent>
 #include <QWindow>
+#include <QLineEdit>
+#include <QCheckBox>
+#include <QDebug>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <windows.h>
 // ------------------ MainWindow 생성자 ------------------
 MainWindow::MainWindow(QWidget *parent)
@@ -295,14 +300,14 @@ MainWindow::MainWindow(QWidget *parent)
     setupDLLArea();  // → dllScrollArea 생성됨
     dllScrollArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    QVBoxLayout *contentSplitLayout = new QVBoxLayout();
+    //QVBoxLayout *contentSplitLayout = new QVBoxLayout();
+    contentSplitLayout = new QVBoxLayout();
     contentSplitLayout->setSpacing(10);
     contentSplitLayout->addWidget(resultTable, 2);
     contentSplitLayout->addWidget(dllScrollArea, 3);
     qDebug() << "[디버그] resultTable:" << resultTable;
     qDebug() << "[디버그] dllScrollArea:" << dllScrollArea;
     mainContentLayout->addLayout(contentSplitLayout);
-
 
     qDebug() << "[디버그] mainContentLayout:" << mainContentLayout;
     // ▶ 탐지 버튼
@@ -441,19 +446,40 @@ void MainWindow::handleStageClick(int index){
     switch (index){
     case 0: // HOME
         updateStage(AppStage::Home);
+        ensureProcFilterBar();
+        if(procFilterBar) {
+            procFilterBar->hide();
+            if (procFilterEdit) procFilterEdit->clear(); // 스테이지 떠날 때 초기화
+        }
         resultTable->hide();
         dllScrollArea->hide();
         logViewer->hide();
         break;
-    case 1: // 프로세스 목록
+    case 1:{ // 프로세스 목록
         updateStage(AppStage::ProcessSelected);
+        ensureProcFilterBar();
+
+        int exists = contentSplitLayout->indexOf(procFilterBar);
+        if (exists < 0) {
+            int resultIndex = contentSplitLayout->indexOf(resultTable);
+            if (resultIndex >= 0) contentSplitLayout->insertWidget(resultIndex, procFilterBar);
+            else                  contentSplitLayout->addWidget(procFilterBar);
+        }
+        if (procFilterBar) procFilterBar->show();
         logViewer->hide();
         dllScrollArea->show();
         loadProcesses();
         break;
+    }
     case 2:
         if(currentStage >= AppStage::ProcessSelected) {
             updateStage(AppStage::DetectionStarted);
+            ensureProcFilterBar();
+            if(procFilterBar) {
+                procFilterBar->hide();
+                if(procFilterEdit) procFilterEdit->clear();
+            }
+            resultTable->hide();
             logViewer->hide();
             dllScrollArea->show();
         }else{
@@ -463,6 +489,12 @@ void MainWindow::handleStageClick(int index){
     case 3:
         if (currentStage >= AppStage::DetectionStarted) {
             updateStage(AppStage::LogSaved);
+
+            ensureProcFilterBar();
+            if(procFilterBar) {
+                procFilterBar->hide();
+                if(procFilterEdit) procFilterEdit->clear();
+            }
 
             // ✅ 다른 콘텐츠 숨기기
             //mainLabel->hide();
@@ -1293,6 +1325,48 @@ void MainWindow::stopStatusAnimation()
 }
 
 
+void MainWindow::filterProcessTable(const QString& text)
+{
+    if (!resultTable) return;
+
+    const QString key = text.trimmed();
+    const bool noKey = key.isEmpty();
+
+    for (int r = 0; r < resultTable->rowCount(); ++r) {
+        const QString pidStr = resultTable->item(r, 0) ? resultTable->item(r, 0)->text() : QString();
+        const QString name   = resultTable->item(r, 1) ? resultTable->item(r, 1)->text() : QString();
+
+        const bool match = noKey
+                           || pidStr.contains(key, Qt::CaseInsensitive)
+                           || name.contains(key, Qt::CaseInsensitive);
+
+        resultTable->setRowHidden(r, !match);
+    }
+}
 
 
+void MainWindow::ensureProcFilterBar()
+{
+    if (procFilterBar) return;
 
+    procFilterBar = new QWidget(this);
+    auto* lay = new QHBoxLayout(procFilterBar);
+    lay->setContentsMargins(0,0,0,0);
+    lay->setSpacing(8);
+
+    procFilterEdit = new QLineEdit(procFilterBar);
+    procFilterEdit->setPlaceholderText("프로세스 이름 또는 PID 검색...");
+    procFilterEdit->setClearButtonEnabled(true);
+    procFilterEdit->setStyleSheet(
+        "QLineEdit { background:#1e1e2e; color:white; border:1px solid #2e2e3f; padding:6px 10px; border-radius:8px; }"
+        );
+
+    lay->addWidget(procFilterEdit, 1);
+
+    // 필터 동작 연결
+    connect(procFilterEdit, &QLineEdit::textChanged,
+            this, &MainWindow::filterProcessTable);
+
+    // 처음엔 숨김
+    procFilterBar->hide();
+}

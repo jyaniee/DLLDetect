@@ -78,6 +78,12 @@ private:
     QString baseStatusText;
     void startStatusAnimation(qint64 pid);
     void stopStatusAnimation();
+
+    QLineEdit* procFilterEdit = nullptr;
+    void filterProcessTable(const QString& text);
+    QWidget* procFilterBar = nullptr;
+    void ensureProcFilterBar();
+    QVBoxLayout* contentSplitLayout = nullptr;
 private slots:
     void onScanResult(const std::vector<Result>& results);
     void onAnalysisFinished(const QString &result);
