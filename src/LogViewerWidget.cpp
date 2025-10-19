@@ -18,7 +18,7 @@ LogViewerWidget::LogViewerWidget(QWidget *parent)
     layout->setSpacing(10);
 
     // 콤보박스 상단 설명
-    QLabel* label = new QLabel("🔽 로그 파일을 선택하세요:", this);
+    QLabel* label = new QLabel("로그 파일을 선택하세요:", this);
     label->setStyleSheet("color: white; font-weight: bold;");
     layout->addWidget(label);
     layout->addWidget(logComboBox);

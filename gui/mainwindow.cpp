@@ -35,10 +35,15 @@
 #include <QSet>
 #include <QSvgRenderer>
 #include <QPainter>
+#include <QMouseEvent>
+#include <QWindow>
 #include <windows.h>
 // ------------------ MainWindow 생성자 ------------------
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent) {
+
+    setWindowFlags(windowFlags() | Qt::FramelessWindowHint | Qt::Window);
+
     // ProcessManager 초기화 및 시그널 연결
     processManager = new ProcessManager(this);
     connect(processManager, &ProcessManager::scanFinished,
@@ -69,14 +74,15 @@ MainWindow::MainWindow(QWidget *parent)
     // 메인 중앙 위젯 구성
     QWidget *central = new QWidget(this);
     central->setStyleSheet("background-color: #12131a;");
-    setCentralWidget(central);
+    // setCentralWidget(central);
 
     QVBoxLayout *mainLayout = new QVBoxLayout(central);
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
 
     // ---------------- 상단바 ----------------
-    QWidget *topBar = new QWidget();
+   // QWidget *topBar = new QWidget();
+    topBar = new QWidget();
     topBar->setFixedHeight(60);
     topBar->setStyleSheet("background-color: #12131a;");
     QHBoxLayout *topBarLayout = new QHBoxLayout(topBar);
@@ -114,6 +120,74 @@ MainWindow::MainWindow(QWidget *parent)
     topLine->setFrameShape(QFrame::HLine);
     topLine->setFrameShadow(QFrame::Plain);
     topLine->setStyleSheet("color: #2e2e3f;");
+
+
+    auto makeWinBtn = [](const QString &glyph, const QString &objName = QString()) {
+        auto *b = new QPushButton(glyph);
+        b->setObjectName(objName);
+        b->setFocusPolicy(Qt::NoFocus);
+        b->setFlat(true);
+        b->setMinimumSize(46, 32);   // 40x28로 줄여도 됨
+        b->setMaximumSize(46, 32);
+        QFont f(QStringLiteral("Segoe MDL2 Assets"));  // 윈도우 기본 아이콘 폰트
+        f.setPixelSize(10);                            // 크기
+        b->setFont(f);
+        return b;
+    };
+
+    // Segoe MDL2 Assets 코드포인트
+    const QChar GLYPH_MIN   = QChar(0xE921); // ChromeMinimize
+    const QChar GLYPH_MAX   = QChar(0xE922); // ChromeMaximize
+    const QChar GLYPH_REST  = QChar(0xE923); // ChromeRestore
+    const QChar GLYPH_CLOSE = QChar(0xE8BB); // ChromeClose
+
+    QPushButton* btnMin   = makeWinBtn(QString(GLYPH_MIN),   "min");
+    QPushButton* btnMax   = makeWinBtn(QString(GLYPH_MAX),   "max");
+    QPushButton* btnClose = makeWinBtn(QString(GLYPH_CLOSE), "close");
+
+
+    topBar->setStyleSheet(R"(
+      QPushButton#min, QPushButton#max, QPushButton#close {
+        color: #cfd3dc;
+        background: transparent;
+        border: none;
+      }
+      QPushButton#min:hover, QPushButton#max:hover {
+        background: #2e2e3f;
+      }
+      QPushButton#min:pressed, QPushButton#max:pressed {
+        background: #1f1f2b;
+      }
+      QPushButton#close:hover {
+        background: #d9534f;  /* 닫기 버튼 호버 시 빨간 배경 */
+        color: white;
+      }
+      QPushButton#close:pressed {
+        background: #b13f3a;
+      }
+    )");
+
+    topBarLayout->addStretch();
+    topBarLayout->addWidget(btnMin, 0, Qt::AlignTop);
+    topBarLayout->addWidget(btnMax, 0, Qt::AlignTop);
+    topBarLayout->addWidget(btnClose, 0, Qt::AlignTop);
+    topBarLayout->setContentsMargins(0, 0, 0, 0);
+
+    connect(btnMin, &QPushButton::clicked, this, [this]{ showMinimized(); });
+    connect(btnMax, &QPushButton::clicked, this,
+            [this, btnMax, GLYPH_REST, GLYPH_MAX]() {
+                isMaximized() ? showNormal() : showMaximized();
+                btnMax->setText(isMaximized()
+                                    ? QString(GLYPH_REST)
+                                    : QString(GLYPH_MAX));
+            });
+    connect(btnClose, &QPushButton::clicked, this, [this]{ close(); });
+    btnMax->setText(isMaximized() ? QString(GLYPH_REST) : QString(GLYPH_MAX));
+
+    // 상단바 잡고 이동할 수 있게 구현
+    topBar->setMouseTracking(true);
+    topBar->installEventFilter(this);
+
 
     // ---------------- 콘텐츠 구성 ----------------
     QWidget *contentArea = new QWidget();
@@ -260,6 +334,39 @@ MainWindow::MainWindow(QWidget *parent)
         stageButtons[0]->setIcon(QIcon(colored));
 
     }
+
+    // 루트 프레임(테두리)
+    auto *windowFrame = new QWidget;
+    windowFrame->setObjectName("windowFrame");
+
+    auto *frameLayout = new QVBoxLayout(windowFrame);
+    frameLayout->setContentsMargins(1,1,1,1);
+    frameLayout->setSpacing(0);
+    frameLayout->addWidget(central);
+
+    auto *root = new QWidget;
+    auto *rootLayout = new QVBoxLayout(root);
+    rootLayout->setContentsMargins(0,0,0,0);
+    rootLayout->setSpacing(0);
+    rootLayout->addWidget(windowFrame);
+    setCentralWidget(root);
+
+    this->windowFrame = windowFrame;
+    this->frameLayout = frameLayout;
+
+    windowFrame->setStyleSheet(R"(
+      /* 기본 배경 */
+      #windowFrame { background-color: #0F1016; }
+
+      /* 창모드(테두리 표시) - 활성/비활성 색상 */
+      #windowFrame[noBorder="false"][active="true"]  { border: 1px solid #05C7F2; } /* #05C7F2 */
+      #windowFrame[noBorder="false"][active="false"] { border: 1px solid #3A3A45; } /* 비활성 회색 */
+
+      /* 최대화/전체화면(테두리 제거) */
+      #windowFrame[noBorder="true"] { border: none; }
+    )");
+
+    updateChromeBorder();
 }
 
 
@@ -1055,3 +1162,58 @@ void MainWindow::onMonitorLog(const QString& s){
     qDebug() << s;
     // LogManager::writeLog() 연동 -> 승찬이
 }
+
+
+bool MainWindow::eventFilter(QObject* obj, QEvent* ev) {
+    if (obj == topBar) {
+        if (ev->type() == QEvent::MouseButtonDblClick) {
+            isMaximized() ? showNormal() : showMaximized();
+            return true;
+        }
+        if (ev->type() == QEvent::MouseButtonPress) {
+            auto* me = static_cast<QMouseEvent*>(ev);
+            if (me->button() == Qt::LeftButton) {
+                if (windowHandle())
+                    windowHandle()->startSystemMove(); // Qt 5.15+/Qt 6
+                return true;
+            }
+        }
+    }
+    return QMainWindow::eventFilter(obj, ev);
+}
+
+// 창 테두리 상태 토글
+void MainWindow::updateChromeBorder() {
+    const bool noBorder = isMaximized() || isFullScreen();
+    const bool active   = isActiveWindow();
+
+    windowFrame->setProperty("noBorder", noBorder);
+    windowFrame->setProperty("active",   active);
+
+    // 테두리 있을 때만 1px 마진
+    frameLayout->setContentsMargins(noBorder ? 0 : 1, noBorder ? 0 : 1,
+                                    noBorder ? 0 : 1, noBorder ? 0 : 1);
+
+    // 스타일 재적용
+    windowFrame->style()->unpolish(windowFrame);
+    windowFrame->style()->polish(windowFrame);
+    windowFrame->update();
+}
+
+void MainWindow::changeEvent(QEvent* e) {
+    QMainWindow::changeEvent(e);
+    if (e->type() == QEvent::WindowStateChange) {
+        updateChromeBorder();
+    }
+}
+
+bool MainWindow::event(QEvent* e) {
+    if (e->type() == QEvent::ActivationChange) {
+        updateChromeBorder();
+    }
+    return QMainWindow::event(e);
+}
+
+
+
+

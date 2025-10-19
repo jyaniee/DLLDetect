@@ -49,6 +49,11 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+protected:
+    bool eventFilter(QObject *obj, QEvent *event) override;
+    bool event(QEvent *event) override;
+    void changeEvent(QEvent *event) override;
+
 private:
     HashComparator hashComparator;
     LogViewerWidget* logViewer;
@@ -58,7 +63,13 @@ private:
     int lastSelectedRow = -1;
     int currentSelectedPid = -1;
 
+    QWidget* topBar = nullptr;
+
     DebugEventMonitor* monitor{nullptr};
+
+    QWidget* windowFrame = nullptr;
+    QVBoxLayout* frameLayout = nullptr;
+    void updateChromeBorder();
 private slots:
     void onScanResult(const std::vector<Result>& results);
     void onAnalysisFinished(const QString &result);
