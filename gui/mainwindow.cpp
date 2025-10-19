@@ -483,6 +483,7 @@ void MainWindow::handleStageClick(int index){
         break;
     }
     case 2:
+        if(lastSelectedRow<0){ warnUser("먼저 프로세스를 선택하세요."); break; }
         if(currentStage >= AppStage::ProcessSelected) {
             updateStage(AppStage::DetectionStarted);
             ensureProcFilterBar();
