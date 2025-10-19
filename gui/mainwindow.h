@@ -72,6 +72,12 @@ private:
 
     QStringList iconPaths;
     void applySidebarSelection(int index);
+
+    QTimer* statusAnimTimer = nullptr;
+    int dotCount = 0;
+    QString baseStatusText;
+    void startStatusAnimation(qint64 pid);
+    void stopStatusAnimation();
 private slots:
     void onScanResult(const std::vector<Result>& results);
     void onAnalysisFinished(const QString &result);

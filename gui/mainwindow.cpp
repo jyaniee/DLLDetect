@@ -61,6 +61,16 @@ MainWindow::MainWindow(QWidget *parent)
     connect(monitor, &DebugEventMonitor::logLine, this, &MainWindow::onMonitorLog);
     connect(monitor, &DebugEventMonitor::alert, this, &MainWindow::onMonitorAlert);
 
+    // 상태 애니메이션 타이머 초기화
+    statusAnimTimer = new QTimer(this);
+    statusAnimTimer->setInterval(500);
+    connect(statusAnimTimer, &QTimer::timeout, this, [this]() {
+        dotCount = (dotCount + 1) % 4;
+        QString dots(dotCount, QChar('.'));
+        resultStatusLabel->setText(baseStatusText + dots);
+    });
+
+
     // 기본 설정
     setWindowTitle("No Syringe");
     resize(1280, 800);
@@ -404,14 +414,15 @@ void MainWindow::setupDetectButtonArea(QVBoxLayout* layout) {
         QPushButton {
             background-color: #02abe1;
             color: white;
-            font-weight: bold;
+            font: 900 12px;
             border-radius: 20px;
+            font-family: 'Noto Sans KR';
+            font-weight: 700;
         }
         QPushButton:hover {
-            background-color: #5e5e7e;
+            background-color: #0298CC;
         }
     )");
-
 
     connect(detectButton, &QPushButton::clicked, this, [=]() {
         handleStageClick(2);
@@ -790,13 +801,14 @@ void MainWindow::handleRowClicked(int row, int column) {
             color: white;
             padding: 15px;
             font-size: 14px;
-            border: 1px solid #2e2e3f;
             border-radius: 10px;
             min-width: 150px;
         }
         QPushButton:checked {
-            background-color: #3e3e5e;
-            border: 2px solid #7aa2f7;
+            border: 2px solid #02abe1;
+        }
+        QPushButton:hover {
+            background-color: #2a2a3c;
         }
         )";
 
@@ -806,7 +818,7 @@ void MainWindow::handleRowClicked(int row, int column) {
         outerLayout->addWidget(staticTitle);
 
         QLabel* hint = new QLabel("※ 정적/스냅샷형: 실행 중 스캔 / 파일·서명·해시 기반 확인");
-        hint->setStyleSheet("color:#a0a7b4; font-size:12px;");
+        hint->setStyleSheet("color:#a0a7b4; font-size:12px; ");
         outerLayout->addWidget(hint);
 
         // 정적 버튼 3개 (훅 버튼 제거)
@@ -834,11 +846,22 @@ void MainWindow::handleRowClicked(int row, int column) {
 
         // ===== [섹션 2] 동적 탐지 (실시간) =====
         QLabel* dynamicTitle = new QLabel("동적 탐지 (실시간)");
-        dynamicTitle->setStyleSheet("color: #ffffff; font-weight: 700; font-size: 16px;");
+       // dynamicTitle->setStyleSheet("color: #ffffff; font-weight: 700; font-size: 16px;");
+        dynamicTitle->setStyleSheet(R"(
+            color: #ffffff;
+
+            font-weight: 700;
+            font-size: 16px;
+        )");
         outerLayout->addWidget(dynamicTitle);
 
         QLabel* hint2 = new QLabel("※ 동적(실시간): OS 알림 기반 / CreateRemoteThread+LoadLibrary 주입 전용 감시");
-        hint2->setStyleSheet("color:#a0a7b4; font-size:12px;");
+        // hint2->setStyleSheet("color:#a0a7b4; font-size:12px;");
+        hint2->setStyleSheet(R"(
+            color: #a0a7b4;
+
+            font-size: 12px;
+        )");
         outerLayout->addWidget(hint2);
 
         // 동적 탐지 버튼
@@ -894,24 +917,27 @@ void MainWindow::handleRowClicked(int row, int column) {
         QPushButton* stopBtn = new QPushButton("감시 중지");
         stopBtn->setFixedSize(120, 40);
         stopBtn->setStyleSheet(R"(
-        QPushButton { background-color: #444c56; color: white; border-radius: 6px; }
-        QPushButton:hover { background-color: #586069; }
+        QPushButton { background-color: #FFFFFF; color: black; border-radius: 20px; font-family: 'Noto Sans KR'; font-weight: 700;}
+        QPushButton:hover { background-color: #f2f2f2;}
         )");
+
         connect(stopBtn, &QPushButton::clicked, this, &MainWindow::onStopMonitorClicked);
 
         QPushButton* runBtn = new QPushButton("탐지 시작");
         runBtn->setStyleSheet(R"(
-        QPushButton {
-            background-color: #7aa2f7;
-            color: white;
-            font-weight: bold;
-            padding: 10px 20px;
-            border-radius: 6px;
-        }
-        QPushButton:hover {
-            background-color: #5e7ddc;
-        }
-    )");
+            QPushButton {
+                background-color: #02abe1;
+                color: white;
+                font-weight: bold;
+                padding: 10px 20px;
+                border-radius: 20px;
+                font-family: 'Noto Sans KR';
+                font-weight: 700;
+            }
+            QPushButton:hover {
+                background-color: #0298CC;
+            }
+        )");
         runBtn->setFixedSize(120, 40);
 
         connect(runBtn, &QPushButton::clicked, this, [=]() {
@@ -919,7 +945,12 @@ void MainWindow::handleRowClicked(int row, int column) {
                 QMessageBox::warning(this, "선택 필요", "탐지 방식을 선택해주세요.");
                 return;
             }
+            if (currentSelectedPid <= 0) {  // 안전망
+                QMessageBox::warning(this, "선택 필요", "프로세스를 먼저 선택해주세요.");
+                return;
+            }
             startDetectionWithMethod(selectedDetectionButton->text());
+            startStatusAnimation(currentSelectedPid);
         });
         runRow->addStretch();
         runRow->addWidget(stopBtn);
@@ -933,7 +964,6 @@ void MainWindow::handleRowClicked(int row, int column) {
 
 
 
-// 현재는 예시로 탐지 방식을 작성해둔거에용
 void MainWindow::startDetectionWithMethod(const QString& method) {
     qDebug() << "[DEBUG] startDetectionWithMethod called, method=" << method
              << " lastSelectedRow=" << lastSelectedRow
@@ -1010,12 +1040,15 @@ void MainWindow::startDetectionWithMethod(const QString& method) {
             return;
         }
         // ---------------------------------------------
+        // 1) 모니터 시작
         bool autoKill = (chkAutoKill && chkAutoKill->isChecked());
         monitor->startMonitoring(DWORD(pid), autoKill);
 
-        resultStatusLabel->setText(QString("🟢 동적 감시 시작 (PID %1) — 새 스레드 시작 ↔ DLL 로드 알림을 상관 분석합니다.").arg(pid));
+        // 2) 상태 애니메이션 시작
+        startStatusAnimation(pid);
+        // resultStatusLabel->setText(QString("🟢 동적 감시 시작 (PID %1) — 새 스레드 시작 ↔ DLL 로드 알림을 상관 분석합니다.").arg(pid));
 
-        return;
+       return;
     }
     // 🔴 1.5초 후 실제 탐지 수행
     QTimer::singleShot(1500, this, [=]() {
@@ -1149,9 +1182,11 @@ void MainWindow::onStartMonitorClicked(){
 
 void MainWindow::onStopMonitorClicked() {
     monitor->stopMonitoring();
+    stopStatusAnimation();
+    /*
     if (resultStatusLabel) {
-        resultStatusLabel->setText("⏹ 감시 중지");
-    }
+        resultStatusLabel->setText("🔴 감시 중지");
+    }*/
 }
 
 void MainWindow::onMonitorAlert(const QString& action, int score, const QString& path){
@@ -1240,6 +1275,23 @@ void MainWindow::applySidebarSelection(int index) {
         }
     }
 }
+
+void MainWindow::startStatusAnimation(qint64 pid)
+{
+    dotCount = 0;
+    baseStatusText =
+        QString("🟢 동적 감시 시작 (PID %1) — 새 스레드 시작 ↔ DLL 로드 알림을 상관 분석합니다").arg(pid);
+    resultStatusLabel->setText(baseStatusText);
+    if (!statusAnimTimer->isActive()) statusAnimTimer->start();
+}
+
+void MainWindow::stopStatusAnimation()
+{
+    if (statusAnimTimer->isActive()) statusAnimTimer->stop();
+    // 멈출 때 최종 상태 고정(원하면 색상/이모지 변경)
+    resultStatusLabel->setText("🔵 동적 감시 대기 — 탐지를 중지했습니다");
+}
+
 
 
 
