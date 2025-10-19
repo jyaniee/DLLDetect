@@ -948,6 +948,10 @@ void MainWindow::handleRowClicked(int row, int column) {
                 for (QPushButton* other : allButtons)
                     if (other != btn) other->setChecked(false);
                 selectedDetectionButton = btn;
+
+                // 선택만 했을 땐는 항상 stop 비활성 (감시 시작 전이므로)
+                if (auto sb = detectionMethodWidget->findChild<QPushButton*>("stopMonitorBtn"))
+                    sb->setEnabled(false);
             });
         }
 
@@ -974,12 +978,30 @@ void MainWindow::handleRowClicked(int row, int column) {
         runRow->setSpacing(12);
 
         QPushButton* stopBtn = new QPushButton("감시 중지");
+        stopBtn->setObjectName("stopMonitorBtn");
         stopBtn->setFixedSize(120, 40);
         stopBtn->setStyleSheet(R"(
-        QPushButton { background-color: #FFFFFF; color: black; border-radius: 20px; font-family: 'Noto Sans KR'; font-weight: 700;}
-        QPushButton:hover { background-color: #f2f2f2;}
+            QPushButton#stopMonitorBtn {
+                border-radius: 20px;
+                font-family: 'Noto Sans KR';
+                font-weight: 700;
+                padding-left: 12px; padding-right: 12px;
+            }
+            QPushButton#stopMonitorBtn:enabled {
+                background-color: #ffffff;   /* 해제(사용 가능) = 경고/정지 컬러 */
+                color: black;
+                border: none;
+            }
+            QPushButton#stopMonitorBtn:enabled:hover {
+                background-color: #f2f2f2;
+            }
+            QPushButton#stopMonitorBtn:disabled {
+                background-color: #2e2e3f;   /* 잠금(비활성) = 어두운 회색 */
+                color: #9aa0a6;
+                border: 1px solid #3a3f5c;
+            }
         )");
-
+        stopBtn->setEnabled(false);  // 초기 비활성화
         connect(stopBtn, &QPushButton::clicked, this, &MainWindow::onStopMonitorClicked);
 
         QPushButton* runBtn = new QPushButton("탐지 시작");
@@ -1039,6 +1061,11 @@ void MainWindow::startDetectionWithMethod(const QString& method) {
         resultStatusLabel->setStyleSheet("color: white; font-size: 14px;");
         resultStatusLabel->setText("🔍 탐지 중...");
     }
+
+    // 기본값: stop 버튼 잠가두기
+    if (auto sb = detectionMethodWidget->findChild<QPushButton*>("stopMonitorBtn"))
+        sb->setEnabled(false);
+
     if (method == "동적 감시(LoadLibrary)") {
         // currentRow()는 탭 이동 시 리셋되므로, 마지막 클릭된 행만 신뢰
         int row = lastSelectedRow;
@@ -1104,6 +1131,10 @@ void MainWindow::startDetectionWithMethod(const QString& method) {
         // 1) 모니터 시작
         bool autoKill = (chkAutoKill && chkAutoKill->isChecked());
         monitor->startMonitoring(DWORD(pid), autoKill);
+
+        // 실제 감시 시작 후에만 stop 버튼 활성화
+        if (auto sb = detectionMethodWidget->findChild<QPushButton*>("stopMonitorBtn"))
+            sb->setEnabled(true);
 
         // 2) 상태 애니메이션 시작
         startStatusAnimation(pid);
@@ -1248,6 +1279,8 @@ void MainWindow::onStopMonitorClicked() {
     if (resultStatusLabel) {
         resultStatusLabel->setText("🔴 감시 중지");
     }*/
+    if (auto sb = detectionMethodWidget->findChild<QPushButton*>("stopMonitorBtn"))
+        sb->setEnabled(false);   // 중지 후 즉시 잠금
 }
 
 void MainWindow::onMonitorAlert(const QString& action, int score, const QString& path){
