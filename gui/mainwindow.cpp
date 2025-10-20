@@ -42,6 +42,7 @@
 #include <QDebug>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QCloseEvent>
 #include <windows.h>
 // ------------------ MainWindow 생성자 ------------------
 MainWindow::MainWindow(QWidget *parent)
@@ -667,6 +668,7 @@ void MainWindow::loadProcesses() {
 }
 
 void MainWindow::onScanResult(const std::vector<Result>& results){
+    if (shuttingDown) return;
     resultTable->clearContents();
     resultTable->setColumnCount(2);
     resultTable->setHorizontalHeaderLabels(QStringList() <<"PID" << "프로세스 이름");
@@ -813,6 +815,8 @@ void MainWindow::handleRowClicked(int row, int column) {
 
 
     void MainWindow::onAnalysisFinished(const QString &resultJson) {
+        if (shuttingDown) return;
+
         // 1) JSON 파싱
         QJsonDocument doc = QJsonDocument::fromJson(resultJson.toUtf8());
         if (!doc.isObject()) return;
@@ -1315,6 +1319,7 @@ void MainWindow::onStopMonitorClicked() {
 }
 
 void MainWindow::onMonitorAlert(const QString& action, int score, const QString& path){
+    if (shuttingDown) return;
     if(action=="warn"){
         warnUser(QString("[경고] 의심 점수 %1, DLL=%2").arg(score).arg(path));
     } else if(action=="terminate"){
@@ -1323,6 +1328,7 @@ void MainWindow::onMonitorAlert(const QString& action, int score, const QString&
 }
 
 void MainWindow::onMonitorLog(const QString& s){
+    if (shuttingDown) return;
     qDebug() << s;
     // LogManager::writeLog() 연동 -> 승찬이
 }
@@ -1572,3 +1578,61 @@ void MainWindow::updateProcInfoBar() {
     // 없으면 숨김
     procInfoBar->hide();
 }
+
+// 안전 종료
+void MainWindow::closeEvent(QCloseEvent* e) {
+    if (shuttingDown) {
+        qDebug() << "[!] Close event ignored — already shutting down.";
+        e->accept();
+        return;
+    }
+    shuttingDown = true;
+
+    qDebug() << "[closeEvent]" << "[*] Application shutdown sequence initiated.";
+
+    // 1) UI 타이머/애니메이션 정지
+    if (statusAnimTimer && statusAnimTimer->isActive()){
+        statusAnimTimer->stop();
+        qDebug() << "[+] Status animation timer stopped.";
+    }
+
+    // 2) 동적 감시/모니터링 중지 및 시그널 해제
+    if (monitor) {
+        qDebug() << "[*] Stopping monitor...";
+        monitor->stopMonitoring();            // 반드시 제공되는 중지 루틴 호출
+        disconnect(monitor, nullptr, this, nullptr);
+        monitor->deleteLater();               // 안전 파괴
+        monitor = nullptr;
+        qDebug() << "[+] Monitor stopped and deleted.";
+    }
+
+    // 3) 네트워크/ML 분석 중이면 중단 또는 시그널 해제
+    if (networkAnalyzer) {
+        // abort() 같은 API가 있으면 호출, 없으면 시그널만 끊기
+        qDebug() << "[*] Releasing network analyzer...";
+        disconnect(networkAnalyzer, nullptr, this, nullptr);
+        networkAnalyzer->deleteLater();
+        networkAnalyzer = nullptr;
+        qDebug() << "[+] Network analyzer released.";
+    }
+
+    // 4) 프로세스 스캔 작업 중단 (취소 API 있으면 호출)
+    if (processManager) {
+        qDebug() << "[*] Stopping process manager...";
+        // processManager->cancel(); // 있으면
+        disconnect(processManager, nullptr, this, nullptr);
+        processManager->deleteLater();
+        processManager = nullptr;
+        qDebug() << "[+] Process manager stopped and deleted.";
+    }
+
+    // 5) 기타 싱글샷/지연 작업이 남아있어도,
+    //    'this'를 컨텍스트로 연결한 람다는 this 소멸 시 자동 취소됨.
+    //    (QTimer::singleShot(..., this, [=]{...}); 형태 유지)
+
+     qDebug() << "[*] All resources have been released. Finalizing shutdown...";
+
+    e->accept();
+    qDebug() << "[*] Application closed successfully.";
+}
+
