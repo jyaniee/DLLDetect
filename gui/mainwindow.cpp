@@ -483,6 +483,7 @@ void MainWindow::handleStageClick(int index){
         break;
     }
     case 2:
+        if(lastSelectedRow<0){ warnUser("먼저 프로세스를 선택하세요."); break; }
         if(currentStage >= AppStage::ProcessSelected) {
             updateStage(AppStage::DetectionStarted);
             ensureProcFilterBar();
@@ -493,32 +494,30 @@ void MainWindow::handleStageClick(int index){
             resultTable->hide();
             logViewer->hide();
             dllScrollArea->show();
-        }else{
-            warnUser("먼저 프로세스를 선택하세요.");
         }
         break;
     case 3:
-        if (currentStage >= AppStage::DetectionStarted) {
-            updateStage(AppStage::LogSaved);
+        updateStage(AppStage::LogSaved);
 
-            ensureProcFilterBar();
-            if(procFilterBar) {
-                procFilterBar->hide();
-                if(procFilterEdit) procFilterEdit->clear();
-            }
-
-            // ✅ 다른 콘텐츠 숨기기
-            //mainLabel->hide();
-            resultTable->hide();
-            dllScrollArea->hide();
-            // (다른 콘텐츠 위젯이 있으면 같이 hide)
-
-            // ✅ 로그 뷰어 보여주기
-            logViewer->loadLogFile();
-            logViewer->show();
-            break;
-
+        ensureProcFilterBar();
+        if(procFilterBar) {
+            procFilterBar->hide();
+            if(procFilterEdit) procFilterEdit->clear();
         }
+
+        // 다른 콘텐츠 숨기기
+        //mainLabel->hide();
+        if (resultTable)    resultTable->hide();
+        if (dllScrollArea)  dllScrollArea->hide();
+        if (procInfoBar)    procInfoBar->hide();   // 선택 프로세스 배지
+        // (다른 콘텐츠 위젯이 있으면 같이 hide)
+
+        // 로그 뷰어 보여주기
+        if (logViewer) {
+             logViewer->loadLogFile();
+             logViewer->show();
+        }
+        break;
     }
 }
 
