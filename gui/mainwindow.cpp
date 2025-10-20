@@ -418,7 +418,7 @@ void MainWindow::setupDLLArea() {
 
 
 void MainWindow::setupDetectButtonArea(QVBoxLayout* layout) {
-    detectButton = new QPushButton("탐지 시작", this);
+    detectButton = new QPushButton("탐지 방법 선택", this);
     detectButton->setFixedSize(160, 40);
     detectButton->setVisible(false);
     detectButton->setEnabled(false);
@@ -604,6 +604,7 @@ void MainWindow::updateStage(AppStage newStage){
             if (detectionMethodWidget) detectionMethodWidget->hide();
             if (detectionResultWidget) detectionResultWidget->hide();
             if (detectButtonWrapper) detectButtonWrapper->hide();
+            if (procInfoBar) procInfoBar->hide();
             clearTable();
             clearDLLArea();
             break;
@@ -612,6 +613,7 @@ void MainWindow::updateStage(AppStage newStage){
             titleLabel->setText("Process");
             hideIf(homeWidget);
             if (detectionResultWidget) detectionResultWidget->hide();
+            if (procInfoBar) procInfoBar->hide();
             break;
         case AppStage::DetectionStarted:
            // mainLabel->setText("DLL 탐지");
@@ -620,12 +622,14 @@ void MainWindow::updateStage(AppStage newStage){
             clearDLLArea();
             hideIf(homeWidget);
             if(detectionMethodWidget) detectionMethodWidget->show();
+            updateProcInfoBar();
             break;
         case AppStage::LogSaved:
             //mainLabel->setText("로그 저장");
             titleLabel->setText("Log");
             hideIf(homeWidget);
             if (detectionResultWidget) detectionResultWidget->hide();
+            if (procInfoBar) procInfoBar->hide();
             break;
         }
         applySidebarSelection(static_cast<int>(currentStage));
@@ -799,6 +803,8 @@ void MainWindow::handleRowClicked(int row, int column) {
                  << " pid=" << pid
                  << " lastSelectedRow=" << lastSelectedRow
                  << " currentSelectedPid=" << currentSelectedPid;
+
+        updateProcInfoBar();
 }
         // ✅ 수동으로 테스트 DLL 삽입
     //   currentDllList.clear();
@@ -850,6 +856,31 @@ void MainWindow::handleRowClicked(int row, int column) {
         outerLayout->setContentsMargins(20, 20, 20, 20);
         outerLayout->setSpacing(16);
 
+
+        // 탐지 대상 배지
+        procInfoBar = new QWidget(this);
+        procInfoBar->setObjectName("procInfoBar");
+        auto* procInfoLay = new QHBoxLayout(procInfoBar);
+        procInfoLay->setContentsMargins(12, 8, 12, 8);
+        procInfoLay->setSpacing(8);
+
+        QLabel* dot = new QLabel("●", procInfoBar);
+        dot->setStyleSheet("color:#05C7F2; font-size:12px;");
+        procInfoLabel = new QLabel("선택된 프로세스 없음", procInfoBar);
+        procInfoLabel->setStyleSheet("color:#cfd3dc; font-size:13px;");
+
+        procInfoLay->addWidget(dot, 0, Qt::AlignVCenter);
+        procInfoLay->addWidget(procInfoLabel,0, Qt::AlignVCenter);
+        procInfoLay->addStretch();
+
+        procInfoBar->setStyleSheet(R"(
+          QWidget#procInfoBar {
+            border:1px solid #2e2e3f;
+            border-radius:10px;
+          }
+        )");
+        procInfoBar->hide();
+        outerLayout->addWidget(procInfoBar);
         //QLabel* title = new QLabel("탐지 방식을 선택하세요:");
         //title->setStyleSheet("color: white; font-weight: bold; font-size: 16px;");
         //outerLayout->addWidget(title);
@@ -1047,6 +1078,7 @@ void MainWindow::handleRowClicked(int row, int column) {
 
 void MainWindow::startDetectionWithMethod(const QString& method) {
     stopStatusAnimation(); // 어떤 방식이든 시작 시점에 애니메이션/문구를 안전하게 리셋
+    updateProcInfoBar();
 
     qDebug() << "[DEBUG] startDetectionWithMethod called, method=" << method
              << " lastSelectedRow=" << lastSelectedRow
@@ -1513,4 +1545,31 @@ void MainWindow::setupHomePage() {
 
     mainContentLayout->addWidget(homeWidget);
     homeWidget->hide();
+}
+
+void MainWindow::updateProcInfoBar() {
+    if (!detectionMethodWidget || !procInfoBar || !procInfoLabel) return;
+
+    // 유효한 선택이 있을 때만 표시
+    if (lastSelectedRow >= 0 &&
+        lastSelectedRow < static_cast<int>(cachedResults.size())) {
+        const auto& r = cachedResults[lastSelectedRow];
+        if (r.pid > 0 && !r.processName.isEmpty()) {
+
+            procInfoBar->setToolTip("선택된 프로세스");
+
+            // --- 긴 이름 말줄임 처리 ---
+            QFontMetrics fm(procInfoLabel->font());
+            QString nameElided = fm.elidedText(r.processName, Qt::ElideRight, 280); // 폭은 UI에 맞게 조절
+
+            procInfoLabel->setText(QString("PID %1  •  %2")
+                                       .arg(r.pid)
+                                       .arg(nameElided));
+
+            procInfoBar->show();
+            return;
+        }
+    }
+    // 없으면 숨김
+    procInfoBar->hide();
 }

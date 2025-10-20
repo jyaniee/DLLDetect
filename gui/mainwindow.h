@@ -84,6 +84,11 @@ private:
     QWidget* procFilterBar = nullptr;
     void ensureProcFilterBar();
     QVBoxLayout* contentSplitLayout = nullptr;
+
+    QWidget* procInfoBar = nullptr;
+    QLabel* procInfoLabel = nullptr;
+    void updateProcInfoBar();
+
 private slots:
     void onScanResult(const std::vector<Result>& results);
     void onAnalysisFinished(const QString &result);
