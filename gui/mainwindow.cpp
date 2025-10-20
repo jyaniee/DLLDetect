@@ -42,6 +42,7 @@
 #include <QDebug>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QCloseEvent>
 #include <windows.h>
 // ------------------ MainWindow 생성자 ------------------
 MainWindow::MainWindow(QWidget *parent)
@@ -418,7 +419,7 @@ void MainWindow::setupDLLArea() {
 
 
 void MainWindow::setupDetectButtonArea(QVBoxLayout* layout) {
-    detectButton = new QPushButton("탐지 시작", this);
+    detectButton = new QPushButton("탐지 방법 선택", this);
     detectButton->setFixedSize(160, 40);
     detectButton->setVisible(false);
     detectButton->setEnabled(false);
@@ -494,32 +495,30 @@ void MainWindow::handleStageClick(int index){
             resultTable->hide();
             logViewer->hide();
             dllScrollArea->show();
-        }else{
-            warnUser("먼저 프로세스를 선택하세요.");
         }
         break;
     case 3:
-        if (currentStage >= AppStage::DetectionStarted) {
-            updateStage(AppStage::LogSaved);
+        updateStage(AppStage::LogSaved);
 
-            ensureProcFilterBar();
-            if(procFilterBar) {
-                procFilterBar->hide();
-                if(procFilterEdit) procFilterEdit->clear();
-            }
-
-            // ✅ 다른 콘텐츠 숨기기
-            //mainLabel->hide();
-            resultTable->hide();
-            dllScrollArea->hide();
-            // (다른 콘텐츠 위젯이 있으면 같이 hide)
-
-            // ✅ 로그 뷰어 보여주기
-            logViewer->loadLogFile();
-            logViewer->show();
-            break;
-
+        ensureProcFilterBar();
+        if(procFilterBar) {
+            procFilterBar->hide();
+            if(procFilterEdit) procFilterEdit->clear();
         }
+
+        // 다른 콘텐츠 숨기기
+        //mainLabel->hide();
+        if (resultTable)    resultTable->hide();
+        if (dllScrollArea)  dllScrollArea->hide();
+        if (procInfoBar)    procInfoBar->hide();   // 선택 프로세스 배지
+        // (다른 콘텐츠 위젯이 있으면 같이 hide)
+
+        // 로그 뷰어 보여주기
+        if (logViewer) {
+             logViewer->loadLogFile();
+             logViewer->show();
+        }
+        break;
     }
 }
 
@@ -605,6 +604,7 @@ void MainWindow::updateStage(AppStage newStage){
             if (detectionMethodWidget) detectionMethodWidget->hide();
             if (detectionResultWidget) detectionResultWidget->hide();
             if (detectButtonWrapper) detectButtonWrapper->hide();
+            if (procInfoBar) procInfoBar->hide();
             clearTable();
             clearDLLArea();
             break;
@@ -613,6 +613,7 @@ void MainWindow::updateStage(AppStage newStage){
             titleLabel->setText("Process");
             hideIf(homeWidget);
             if (detectionResultWidget) detectionResultWidget->hide();
+            if (procInfoBar) procInfoBar->hide();
             break;
         case AppStage::DetectionStarted:
            // mainLabel->setText("DLL 탐지");
@@ -621,12 +622,14 @@ void MainWindow::updateStage(AppStage newStage){
             clearDLLArea();
             hideIf(homeWidget);
             if(detectionMethodWidget) detectionMethodWidget->show();
+            updateProcInfoBar();
             break;
         case AppStage::LogSaved:
             //mainLabel->setText("로그 저장");
             titleLabel->setText("Log");
             hideIf(homeWidget);
             if (detectionResultWidget) detectionResultWidget->hide();
+            if (procInfoBar) procInfoBar->hide();
             break;
         }
         applySidebarSelection(static_cast<int>(currentStage));
@@ -665,6 +668,7 @@ void MainWindow::loadProcesses() {
 }
 
 void MainWindow::onScanResult(const std::vector<Result>& results){
+    if (shuttingDown) return;
     resultTable->clearContents();
     resultTable->setColumnCount(2);
     resultTable->setHorizontalHeaderLabels(QStringList() <<"PID" << "프로세스 이름");
@@ -800,6 +804,8 @@ void MainWindow::handleRowClicked(int row, int column) {
                  << " pid=" << pid
                  << " lastSelectedRow=" << lastSelectedRow
                  << " currentSelectedPid=" << currentSelectedPid;
+
+        updateProcInfoBar();
 }
         // ✅ 수동으로 테스트 DLL 삽입
     //   currentDllList.clear();
@@ -809,6 +815,8 @@ void MainWindow::handleRowClicked(int row, int column) {
 
 
     void MainWindow::onAnalysisFinished(const QString &resultJson) {
+        if (shuttingDown) return;
+
         // 1) JSON 파싱
         QJsonDocument doc = QJsonDocument::fromJson(resultJson.toUtf8());
         if (!doc.isObject()) return;
@@ -851,6 +859,31 @@ void MainWindow::handleRowClicked(int row, int column) {
         outerLayout->setContentsMargins(20, 20, 20, 20);
         outerLayout->setSpacing(16);
 
+
+        // 탐지 대상 배지
+        procInfoBar = new QWidget(this);
+        procInfoBar->setObjectName("procInfoBar");
+        auto* procInfoLay = new QHBoxLayout(procInfoBar);
+        procInfoLay->setContentsMargins(12, 8, 12, 8);
+        procInfoLay->setSpacing(8);
+
+        QLabel* dot = new QLabel("●", procInfoBar);
+        dot->setStyleSheet("color:#05C7F2; font-size:12px;");
+        procInfoLabel = new QLabel("선택된 프로세스 없음", procInfoBar);
+        procInfoLabel->setStyleSheet("color:#cfd3dc; font-size:13px;");
+
+        procInfoLay->addWidget(dot, 0, Qt::AlignVCenter);
+        procInfoLay->addWidget(procInfoLabel,0, Qt::AlignVCenter);
+        procInfoLay->addStretch();
+
+        procInfoBar->setStyleSheet(R"(
+          QWidget#procInfoBar {
+            border:1px solid #2e2e3f;
+            border-radius:10px;
+          }
+        )");
+        procInfoBar->hide();
+        outerLayout->addWidget(procInfoBar);
         //QLabel* title = new QLabel("탐지 방식을 선택하세요:");
         //title->setStyleSheet("color: white; font-weight: bold; font-size: 16px;");
         //outerLayout->addWidget(title);
@@ -1048,6 +1081,7 @@ void MainWindow::handleRowClicked(int row, int column) {
 
 void MainWindow::startDetectionWithMethod(const QString& method) {
     stopStatusAnimation(); // 어떤 방식이든 시작 시점에 애니메이션/문구를 안전하게 리셋
+    updateProcInfoBar();
 
     qDebug() << "[DEBUG] startDetectionWithMethod called, method=" << method
              << " lastSelectedRow=" << lastSelectedRow
@@ -1285,6 +1319,7 @@ void MainWindow::onStopMonitorClicked() {
 }
 
 void MainWindow::onMonitorAlert(const QString& action, int score, const QString& path){
+    if (shuttingDown) return;
     if(action=="warn"){
         warnUser(QString("[경고] 의심 점수 %1, DLL=%2").arg(score).arg(path));
     } else if(action=="terminate"){
@@ -1293,6 +1328,7 @@ void MainWindow::onMonitorAlert(const QString& action, int score, const QString&
 }
 
 void MainWindow::onMonitorLog(const QString& s){
+    if (shuttingDown) return;
     qDebug() << s;
     // LogManager::writeLog() 연동 -> 승찬이
 }
@@ -1515,3 +1551,88 @@ void MainWindow::setupHomePage() {
     mainContentLayout->addWidget(homeWidget);
     homeWidget->hide();
 }
+
+void MainWindow::updateProcInfoBar() {
+    if (!detectionMethodWidget || !procInfoBar || !procInfoLabel) return;
+
+    // 유효한 선택이 있을 때만 표시
+    if (lastSelectedRow >= 0 &&
+        lastSelectedRow < static_cast<int>(cachedResults.size())) {
+        const auto& r = cachedResults[lastSelectedRow];
+        if (r.pid > 0 && !r.processName.isEmpty()) {
+
+            procInfoBar->setToolTip("선택된 프로세스");
+
+            // --- 긴 이름 말줄임 처리 ---
+            QFontMetrics fm(procInfoLabel->font());
+            QString nameElided = fm.elidedText(r.processName, Qt::ElideRight, 280); // 폭은 UI에 맞게 조절
+
+            procInfoLabel->setText(QString("PID %1  •  %2")
+                                       .arg(r.pid)
+                                       .arg(nameElided));
+
+            procInfoBar->show();
+            return;
+        }
+    }
+    // 없으면 숨김
+    procInfoBar->hide();
+}
+
+// 안전 종료
+void MainWindow::closeEvent(QCloseEvent* e) {
+    if (shuttingDown) {
+        qDebug() << "[!] Close event ignored — already shutting down.";
+        e->accept();
+        return;
+    }
+    shuttingDown = true;
+
+    qDebug() << "[closeEvent]" << "[*] Application shutdown sequence initiated.";
+
+    // 1) UI 타이머/애니메이션 정지
+    if (statusAnimTimer && statusAnimTimer->isActive()){
+        statusAnimTimer->stop();
+        qDebug() << "[+] Status animation timer stopped.";
+    }
+
+    // 2) 동적 감시/모니터링 중지 및 시그널 해제
+    if (monitor) {
+        qDebug() << "[*] Stopping monitor...";
+        monitor->stopMonitoring();            // 반드시 제공되는 중지 루틴 호출
+        disconnect(monitor, nullptr, this, nullptr);
+        monitor->deleteLater();               // 안전 파괴
+        monitor = nullptr;
+        qDebug() << "[+] Monitor stopped and deleted.";
+    }
+
+    // 3) 네트워크/ML 분석 중이면 중단 또는 시그널 해제
+    if (networkAnalyzer) {
+        // abort() 같은 API가 있으면 호출, 없으면 시그널만 끊기
+        qDebug() << "[*] Releasing network analyzer...";
+        disconnect(networkAnalyzer, nullptr, this, nullptr);
+        networkAnalyzer->deleteLater();
+        networkAnalyzer = nullptr;
+        qDebug() << "[+] Network analyzer released.";
+    }
+
+    // 4) 프로세스 스캔 작업 중단 (취소 API 있으면 호출)
+    if (processManager) {
+        qDebug() << "[*] Stopping process manager...";
+        // processManager->cancel(); // 있으면
+        disconnect(processManager, nullptr, this, nullptr);
+        processManager->deleteLater();
+        processManager = nullptr;
+        qDebug() << "[+] Process manager stopped and deleted.";
+    }
+
+    // 5) 기타 싱글샷/지연 작업이 남아있어도,
+    //    'this'를 컨텍스트로 연결한 람다는 this 소멸 시 자동 취소됨.
+    //    (QTimer::singleShot(..., this, [=]{...}); 형태 유지)
+
+     qDebug() << "[*] All resources have been released. Finalizing shutdown...";
+
+    e->accept();
+    qDebug() << "[*] Application closed successfully.";
+}
+

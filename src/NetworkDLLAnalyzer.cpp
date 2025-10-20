@@ -4,6 +4,8 @@
 #include <QJsonObject>
 #include <QUrl>
 #include <QJsonArray>
+#include <QFile>
+#include <QFileInfo>
 
 
 NetworkDLLAnalyzer::NetworkDLLAnalyzer(QObject *parent)
@@ -12,14 +14,50 @@ NetworkDLLAnalyzer::NetworkDLLAnalyzer(QObject *parent)
     connect(networkManager, &QNetworkAccessManager::finished,
             this, &NetworkDLLAnalyzer::onReplyFinished);
 }
+
+
 void NetworkDLLAnalyzer::analyzeDLLs(const QStringList &dllList)
 {
-    QUrl url("http://127.0.0.1:5000/bulk_predict");
+
+    QUrl url("http://34.207.209.73:5000/bulk_predict");
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
+    QJsonArray filesArray;
+
+    for (const QString &dllPath : dllList) {
+        QFile file(dllPath);
+        if (!file.open(QIODevice::ReadOnly)) {
+
+            emit analysisFinished("Error: C++에서 파일을 읽을 수 없습니다: " + dllPath);
+            continue;
+        }
+
+
+        QByteArray fileData = file.readAll();
+        file.close();
+
+
+        QByteArray base64Data = fileData.toBase64();
+
+
+        QJsonObject fileObject;
+        fileObject["file_name"] = QFileInfo(dllPath).fileName();
+        fileObject["file_content"] = QString::fromUtf8(base64Data);
+
+
+        filesArray.append(fileObject);
+    }
+
+    if (filesArray.isEmpty()) {
+
+        emit analysisFinished("Error: 분석할 파일이 없습니다.");
+        return;
+    }
+
+
     QJsonObject json;
-    json["dll_list"] = QJsonArray::fromStringList(dllList);
+    json["files"] = filesArray;
 
     QJsonDocument doc(json);
     QByteArray data = doc.toJson();
@@ -28,14 +66,32 @@ void NetworkDLLAnalyzer::analyzeDLLs(const QStringList &dllList)
 }
 
 
+
 void NetworkDLLAnalyzer::analyzeDLL(const QString &dllPath)
 {
-    QUrl url("http://127.0.0.1:5000/predict");  // Flask 서버 주소
+
+    QUrl url("http://34.207.209.73:5000/predict");  // Flask 서버 주소
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
+    QFile file(dllPath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        emit analysisFinished("Error: C++에서 파일을 읽을 수 없습니다: " + dllPath);
+        return;
+    }
+
+
+    QByteArray fileData = file.readAll();
+    file.close();
+
+
+    QByteArray base64Data = fileData.toBase64();
+
+
     QJsonObject json;
-    json["dll_path"] = dllPath;
+    json["file_name"] = QFileInfo(dllPath).fileName();
+    json["file_content"] = QString::fromUtf8(base64Data);
+
     QJsonDocument doc(json);
     QByteArray data = doc.toJson();
 
