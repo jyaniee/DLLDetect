@@ -70,7 +70,7 @@ void NetworkDLLAnalyzer::analyzeDLLs(const QStringList &dllList)
 void NetworkDLLAnalyzer::analyzeDLL(const QString &dllPath)
 {
 
-    QUrl url("http://34.207.209.73:5000/predict");  // Flask 서버 주소
+    QUrl url("http://107.21.184.244:5000/predict");  // Flask 서버 주소
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
