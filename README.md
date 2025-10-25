@@ -169,7 +169,7 @@ DLLDetect/
 ### 로그 스테이지 화면
 > 정적 탐지 후 CSV 로그를 GUI를 통해 조회하는 화면입니다.
 
-![로그 스테이지 화면](./resources/screenshots/log_stage.png)
+![로그 스테이지 화면](./resources/screenshots/log_stage.jpg)
 
 ## 향후 계획
 
