@@ -65,9 +65,6 @@ DLLDetect는 Windows 프로세스에 로드된 DLL을 대상으로
 - **MainWindow**
   - 프로세스 목록 로드 및 선택, 탐지 방식 실행 제어.
   - 선택된 프로세스의 DLL 목록 표시.
-- **LogViewerWidget**
-  - 데스크톱 경로의 CSV 로그 파일 목록을 로드하여 콤보박스로 선택 후 테이블로 표시.  
-  - 컬럼: `timestamp, PID, dll_path, result`
 
 > **정책:** GUI에서는 한 번에 하나의 탐지만 실행되도록 제한.  
 > 출력 영역이 하나이므로 탐지 중 중복 실행을 방지합니다.
