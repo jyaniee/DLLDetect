@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./resources/img/no_syringe.png" alt="No Syringe" width="200"/>
+  <img src="./resources/team_logo/no_syringe.png" alt="No Syringe" width="200"/>
 </p>
 
 # DLLDetect
