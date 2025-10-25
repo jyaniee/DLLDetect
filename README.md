@@ -1,7 +1,3 @@
-<p align="left">
-  <img src="./resources/team_logo/no_syringe.png" alt="No Syringe" width="200"/>
-</p>
-
 # DLLDetect
 
 **Detect, Analyze, and Visualize Injection.**  
