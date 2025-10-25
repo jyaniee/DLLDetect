@@ -98,7 +98,7 @@ DLLDetect는 Windows 프로세스에 로드된 DLL을 대상으로
 
 > **동적 탐지는 실시간 표시 중심이며, 파일 로그는 생성하지 않습니다.**
 
-### 로그 관리 모듈 (`src/log/`)
+### 로그 관리 모듈
 - **LogManager**
   - 정적 탐지 결과를 CSV 형식으로 저장.  
   - 파일명 예시: `1234-GameClient-Static.csv`  
