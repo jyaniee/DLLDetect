@@ -3401,3 +3401,5 @@ C:\fake_paths\wannacry_payload_packed.dll,340000,5,0,7.85421,1
 C:\fake_paths\redline_stealer_v5.dll,225280,3,0,7.96222,1
 C:\fake_paths\raccoon_stealer_v2.dll,172032,4,0,7.95310,1
 C:\fake_paths\vidar_stealer_payload.dll,196608,6,0,7.89001,1
+C:\fake_paths\mimikatz_v2_loader.dll,294912,5,3,7.68132,1
+C:\fake_paths\gh0st_rat_client_v3.dll,143360,5,4,7.61098,1
