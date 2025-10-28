@@ -3415,3 +3415,5 @@ C:\fake_paths\tdss_rootkit_driver.dll,311296,6,0,7.81234,1
 C:\fake_paths\zeroaccess_rootkit_packed.dll,114688,3,0,7.97541,1
 C:\fake_paths\powershell_injector.dll,65536,3,0,7.88991,1
 C:\fake_paths\reflective_loader_packed.dll,40960,2,0,7.99512,1
+C:\fake_paths\mirai_bot_client.dll,122880,4,1,7.76543,1
+C:\fake_paths\ddos_trojan_packed.dll,196608,3,0,7.94321,1
