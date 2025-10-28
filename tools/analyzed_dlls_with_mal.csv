@@ -3413,3 +3413,5 @@ C:\fake_paths\conficker_worm_payload.dll,188416,5,1,7.72101,1
 C:\fake_paths\stuxnet_style_loader.dll,501760,7,2,7.51234,1
 C:\fake_paths\tdss_rootkit_driver.dll,311296,6,0,7.81234,1
 C:\fake_paths\zeroaccess_rootkit_packed.dll,114688,3,0,7.97541,1
+C:\fake_paths\powershell_injector.dll,65536,3,0,7.88991,1
+C:\fake_paths\reflective_loader_packed.dll,40960,2,0,7.99512,1
