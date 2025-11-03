@@ -46,6 +46,7 @@
 #include <windows.h>
 #include <QBrush>
 #include <QColor>
+#include <ColoredHeaderDelegate.h>
 // ------------------ MainWindow 생성자 ------------------
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent) {
@@ -670,10 +671,10 @@ void MainWindow::loadProcesses() {
 }
 
 void MainWindow::onScanResult(const std::vector<Result>& results){
-
+    if(shuttingDown) return;
 
     if (shuttingDown) return;
-    resultTable->clearContents();
+    resultTable->clear();
     resultTable->setColumnCount(2);
     resultTable->setHorizontalHeaderLabels(QStringList() <<"PID" << "프로세스 이름");
     resultTable->setRowCount(static_cast<int>(results.size()));
@@ -681,11 +682,16 @@ void MainWindow::onScanResult(const std::vector<Result>& results){
     resultTable->setSelectionMode(QAbstractItemView::SingleSelection);
     resultTable->setSelectionBehavior(QAbstractItemView::SelectRows);
 
+    resultTable->verticalHeader()->setVisible(true);
+
+
     static const QSet<QString> systemProcesses = {
         "explorer.exe", "svchost.exe", "wininit.exe", "services.exe",
         "lsass.exe", "smss.exe", "csrss.exe", "winlogon.exe",
         "RuntimeBroker.exe", "System Idle Process", "System"
     };
+
+    QSet<int> coloredRows;
 
     for (int i = 0; i < static_cast<int>(results.size()); ++i) {
         const Result &res = results[i];
@@ -693,21 +699,45 @@ void MainWindow::onScanResult(const std::vector<Result>& results){
         QTableWidgetItem* nameItem = new QTableWidgetItem(res.processName);
 
         if (systemProcesses.contains(res.processName.toLower())){
-            QBrush textColor(QColor("#05c7f2"));
-            pidItem->setForeground(textColor);
-            nameItem->setForeground(textColor);
+            QBrush color(QColor("#05c7f2"));
+            pidItem->setForeground(color);
+            nameItem->setForeground(color);
+            coloredRows.insert(i);
 
     }
         resultTable->setItem(i,0,pidItem);
         resultTable->setItem(i,1,nameItem);
+
+        QTableWidgetItem *headerItem = new QTableWidgetItem(QString::number(i + 1));
+        resultTable->setVerticalHeaderItem(i, headerItem);
     }
 //    connect(resultTable, &QTableWidget::cellClicked, this, &MainWindow::handleRowClicked);
+    for (int i = 0;i< resultTable->rowCount(); ++i){
+        QTableWidgetItem *headerItem = resultTable->verticalHeaderItem(i);
+        if (!headerItem) continue;
+
+        if(coloredRows.contains(i)) {
+            headerItem->setForeground(QBrush(QColor("#05c7f2")));
+        }else {
+            headerItem->setForeground(QBrush(QColor("#ffffff")));
+        }
+        resultTable->verticalHeader()->setStyleSheet(R"(
+        QHeaderView::section {
+            background-color: #12131A;
+            border: none;
+            font-weight: bold;
+        }
+    )");
+
+
     cachedResults = results;
     resultTable->show();
+    }
 
     if (results.empty()) {
         QMessageBox::information(this, "결과 없음", "프로세스를 불러오지 못했습니다.");
     }
+
 }
 
 

@@ -64,6 +64,7 @@ add_executable(DLLDetect ${SOURCES} ${MOC_SOURCES} ${HEADERS} ${UIC_SOURCES} ${r
   src/DebugEventMonitor.cpp
   include/DebugEventMonitor.h
   appicon.rc
+  include/ColoredHeaderDelegate.h
 
 
 
