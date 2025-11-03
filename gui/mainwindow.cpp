@@ -44,6 +44,8 @@
 #include <QJsonObject>
 #include <QCloseEvent>
 #include <windows.h>
+#include <QBrush>
+#include <QColor>
 // ------------------ MainWindow 생성자 ------------------
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent) {
@@ -668,6 +670,8 @@ void MainWindow::loadProcesses() {
 }
 
 void MainWindow::onScanResult(const std::vector<Result>& results){
+
+
     if (shuttingDown) return;
     resultTable->clearContents();
     resultTable->setColumnCount(2);
@@ -677,22 +681,35 @@ void MainWindow::onScanResult(const std::vector<Result>& results){
     resultTable->setSelectionMode(QAbstractItemView::SingleSelection);
     resultTable->setSelectionBehavior(QAbstractItemView::SelectRows);
 
-
+    static const QSet<QString> systemProcesses = {
+        "explorer.exe", "svchost.exe", "wininit.exe", "services.exe",
+        "lsass.exe", "smss.exe", "csrss.exe", "winlogon.exe",
+        "RuntimeBroker.exe", "System Idle Process", "System"
+    };
 
     for (int i = 0; i < static_cast<int>(results.size()); ++i) {
         const Result &res = results[i];
-        resultTable->setItem(i, 0, new QTableWidgetItem(QString::number(res.pid)));
-        resultTable->setItem(i, 1, new QTableWidgetItem(res.processName));
+        QTableWidgetItem* pidItem = new QTableWidgetItem(QString::number(res.pid));
+        QTableWidgetItem* nameItem = new QTableWidgetItem(res.processName);
+
+        if (systemProcesses.contains(res.processName.toLower())){
+            QBrush textColor(QColor("#05c7f2"));
+            pidItem->setForeground(textColor);
+            nameItem->setForeground(textColor);
+
+    }
+        resultTable->setItem(i,0,pidItem);
+        resultTable->setItem(i,1,nameItem);
     }
 //    connect(resultTable, &QTableWidget::cellClicked, this, &MainWindow::handleRowClicked);
     cachedResults = results;
-
     resultTable->show();
 
     if (results.empty()) {
         QMessageBox::information(this, "결과 없음", "프로세스를 불러오지 못했습니다.");
     }
 }
+
 
 void MainWindow::warnUser(const QString &msg){
     QMessageBox::warning(this, "안내", msg);
